@@ -812,8 +812,8 @@ input:checked + .slider:before {
   gap: 6px;
 }
 
-.panel.hidden {
-  display: none;
+.hidden {
+  display: none !important;
 }
 
 .topic-tag-chip,
