@@ -1792,12 +1792,12 @@ pre .copy-code-btn.copied {
 .topics-scroll-container::-webkit-scrollbar {
   display: none;
 }
-#topicList {
+.topic-badge-row {
   display: flex;
   gap: 8px;
   flex-wrap: nowrap;
 }
-#topicList .topic-button {
+.topic-badge-row .topic-button {
   flex-shrink: 0;
   white-space: nowrap;
   padding: 6px 12px;
@@ -1808,12 +1808,12 @@ pre .copy-code-btn.copied {
   color: var(--text-muted);
   transition: all 0.2s ease;
 }
-#topicList .topic-button:hover {
+.topic-badge-row .topic-button:hover {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
   transform: none;
 }
-#topicList .topic-button.active {
+.topic-badge-row .topic-button.active {
   background: var(--accent-soft);
   border-color: rgba(99, 102, 241, 0.3);
   color: var(--text-primary);
@@ -1843,11 +1843,6 @@ pre .copy-code-btn.copied {
 }
 
 /* Time Filters (Segmented switches) */
-.time-filter-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
 
 /* Priority Slicing Table Grid styling */
 .company-table-container {

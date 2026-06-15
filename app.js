@@ -725,7 +725,13 @@ function renderHeader() {
 }
 
 function render() {
+  const sheetsFilterContainer = document.querySelector("#sheetsFilterContainer");
+  const companiesFilterContainer = document.querySelector("#companiesFilterContainer");
+
   if (state.mode === "sheets") {
+    if (sheetsFilterContainer) sheetsFilterContainer.classList.remove("hidden");
+    if (companiesFilterContainer) companiesFilterContainer.classList.add("hidden");
+
     const questions = filteredQuestions();
     renderSheets();
     renderTopics();
@@ -733,6 +739,9 @@ function render() {
     renderStats(questions);
     renderQuestions(questions);
   } else if (state.mode === "companies") {
+    if (sheetsFilterContainer) sheetsFilterContainer.classList.add("hidden");
+    if (companiesFilterContainer) companiesFilterContainer.classList.remove("hidden");
+
     const questions = filteredCompanyQuestions();
     renderCompanies();
     renderTimeFilters();
@@ -740,6 +749,9 @@ function render() {
     renderStats(questions);
     renderQuestions(questions);
   } else if (state.mode === "test") {
+    if (sheetsFilterContainer) sheetsFilterContainer.classList.add("hidden");
+    if (companiesFilterContainer) companiesFilterContainer.classList.add("hidden");
+
     renderTestOnboarding();
   }
 }
