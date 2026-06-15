@@ -35,6 +35,7 @@ const state = {
   topics: new Set(),
   search: "",
   showOptimalFirst: true,
+  renderLimit: 60,
   
   // Company state
   companies: [],
@@ -86,12 +87,14 @@ function selectSheet(sheetId) {
   state.sheetId = sheetId;
   state.topics = new Set();
   state.search = "";
+  state.renderLimit = 60;
   searchInput.value = "";
   render();
 }
 
 function showAllTopics() {
   state.topics = new Set();
+  state.renderLimit = 60;
   render();
 }
 
@@ -101,6 +104,7 @@ function toggleTopic(topic) {
   } else {
     state.topics.add(topic);
   }
+  state.renderLimit = 60;
   render();
 }
 
@@ -340,7 +344,6 @@ function renderQuestion(question) {
   } else {
     contentHtml.innerHTML = `<p>${question.summary}</p>`;
   }
-  renderMath(contentHtml);
 
   // Expand/Collapse Card on Header click
   const toggleExpand = (e) => {
@@ -351,6 +354,11 @@ function renderQuestion(question) {
     node.classList.toggle("collapsed");
     if (isExpanded) {
       addCopyButtons(node);
+      // Compile LaTeX math ONLY when first expanded
+      if (!contentHtml.classList.contains("math-rendered")) {
+        renderMath(contentHtml);
+        contentHtml.classList.add("math-rendered");
+      }
     }
   };
 
@@ -516,38 +524,63 @@ function renderQuestions(questions) {
     return;
   }
 
-  if (state.topics.size === 1) {
-    questionGrid.replaceChildren(...questions.map(renderQuestion));
-    return;
-  }
-
-  const groups = {};
-  questions.forEach((q) => {
-    if (!groups[q.topic]) {
-      groups[q.topic] = [];
-    }
-    groups[q.topic].push(q);
-  });
+  const hasMore = questions.length > state.renderLimit;
+  const visibleQs = hasMore ? questions.slice(0, state.renderLimit) : questions;
 
   const children = [];
 
-  for (const topic in groups) {
-    const header = document.createElement("div");
-    header.className = "topic-group-header";
-
-    const topicQuestionsCount = state.mode === "sheets"
-      ? currentSheet().questions.filter((q) => q.topic === topic).length
-      : state.companyQuestions.filter((q) => q.topic === topic).length;
-
-    header.innerHTML = `
-      <h3>${topic}</h3>
-      <span class="topic-count-badge">${topicQuestionsCount} Questions</span>
-    `;
-    children.push(header);
-
-    groups[topic].forEach((q) => {
-      children.push(renderQuestion(q));
+  if (state.topics.size === 1) {
+    children.push(...visibleQs.map(renderQuestion));
+  } else {
+    const groups = {};
+    visibleQs.forEach((q) => {
+      if (!groups[q.topic]) {
+        groups[q.topic] = [];
+      }
+      groups[q.topic].push(q);
     });
+
+    for (const topic in groups) {
+      const header = document.createElement("div");
+      header.className = "topic-group-header";
+
+      const topicQuestionsCount = state.mode === "sheets"
+        ? currentSheet().questions.filter((q) => q.topic === topic).length
+        : state.companyQuestions.filter((q) => q.topic === topic).length;
+
+      header.innerHTML = `
+        <h3>${topic}</h3>
+        <span class="topic-count-badge">${topicQuestionsCount} Questions</span>
+      `;
+      children.push(header);
+
+      groups[topic].forEach((q) => {
+        children.push(renderQuestion(q));
+      });
+    }
+  }
+
+  if (hasMore) {
+    const footer = document.createElement("div");
+    footer.className = "load-more-container";
+    
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "load-more-btn";
+    btn.innerHTML = `
+      <span>Load More (${questions.length - state.renderLimit} remaining)</span>
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    `;
+    btn.addEventListener("click", () => {
+      state.renderLimit += 60;
+      if (state.mode === "sheets") {
+        renderQuestions(filteredQuestions());
+      } else {
+        renderQuestions(filteredCompanyQuestions());
+      }
+    });
+    footer.appendChild(btn);
+    children.push(footer);
   }
 
   questionGrid.replaceChildren(...children);
@@ -632,6 +665,7 @@ function renderCompanies() {
 
 function selectCompany(companyId) {
   state.selectedCompanyId = companyId;
+  state.renderLimit = 60;
   
   const grid = document.querySelector("#questionGrid");
   grid.innerHTML = `<div class="empty-state"><p class="muted-text">Loading company questions... ⏳</p></div>`;
@@ -662,6 +696,7 @@ function renderTimeFilters() {
   allBtn.innerHTML = `<span>All time</span><span>${state.companyQuestions.length}</span>`;
   allBtn.addEventListener("click", () => {
     state.timeFilters = new Set();
+    state.renderLimit = 60;
     render();
   });
   
@@ -685,6 +720,7 @@ function toggleTimeFilter(tf) {
   } else {
     state.timeFilters.add(tf);
   }
+  state.renderLimit = 60;
   render();
 }
 
@@ -733,6 +769,7 @@ tabSheets.addEventListener("click", () => {
   
   state.mode = "sheets";
   state.search = "";
+  state.renderLimit = 60;
   searchInput.value = "";
   render();
 });
@@ -748,6 +785,7 @@ tabCompanies.addEventListener("click", () => {
   
   state.mode = "companies";
   state.search = "";
+  state.renderLimit = 60;
   searchInput.value = "";
   
   if (state.companyQuestions.length === 0 && state.selectedCompanyId) {
@@ -768,6 +806,7 @@ tabTest.addEventListener("click", () => {
   
   state.mode = "test";
   state.search = "";
+  state.renderLimit = 60;
   searchInput.value = "";
   render();
 });
@@ -1324,6 +1363,7 @@ function exitMockTest() {
   testSection.classList.add("hidden");
   
   state.mode = "sheets";
+  state.renderLimit = 60;
   render();
 }
 
@@ -1338,6 +1378,7 @@ companySearchInput.addEventListener("input", (event) => {
 
 searchInput.addEventListener("input", (event) => {
   state.search = event.target.value;
+  state.renderLimit = 60;
   render();
 });
 

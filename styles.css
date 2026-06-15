@@ -1670,4 +1670,73 @@ pre .copy-code-btn.copied {
   transform: scale(1.1);
 }
 
+/* Staggered Card Fade-in Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.question-card {
+  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Pure CSS Staggered Delays for first 10 cards */
+.question-card:nth-child(1) { animation-delay: 0.02s; }
+.question-card:nth-child(2) { animation-delay: 0.04s; }
+.question-card:nth-child(3) { animation-delay: 0.06s; }
+.question-card:nth-child(4) { animation-delay: 0.08s; }
+.question-card:nth-child(5) { animation-delay: 0.1s; }
+.question-card:nth-child(6) { animation-delay: 0.12s; }
+.question-card:nth-child(7) { animation-delay: 0.14s; }
+.question-card:nth-child(8) { animation-delay: 0.16s; }
+.question-card:nth-child(9) { animation-delay: 0.18s; }
+.question-card:nth-child(10) { animation-delay: 0.2s; }
+
+/* Load More Button styling */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.load-more-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  color: var(--accent);
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.load-more-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.load-more-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.load-more-btn:hover svg {
+  transform: translateY(2px);
+}
+
 
