@@ -12,12 +12,14 @@ WORKDIR /app
 
 # Copy package.json (if any)
 COPY package.json ./
-RUN npm install --production || true
+
+# RECOMMENDED CHANGE: Removed `|| true` to guarantee dependencies build successfully
+RUN npm install --production
 
 # Copy application files
 COPY . .
 
-# Expose port
+# Expose port (Optional but fine to keep for documentation)
 EXPOSE 5173
 
 # Start the server

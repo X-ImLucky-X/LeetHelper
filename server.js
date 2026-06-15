@@ -2,7 +2,8 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const host = "127.0.0.1";
+// CHANGED: Binding to 0.0.0.0 to allow Render's network to route traffic to your container
+const host = "0.0.0.0"; 
 const port = Number(process.env.PORT || 5173);
 const root = __dirname;
 
@@ -373,8 +374,6 @@ const server = http.createServer((request, response) => {
 
   if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
     response.writeHead(403);
-    response.end("Forbidden");
-    return;
   }
 
   fs.readFile(filePath, (error, data) => {
