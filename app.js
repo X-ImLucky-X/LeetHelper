@@ -411,24 +411,44 @@ function renderQuestion(question) {
             html = `<pre>${solutionsMarkdown}</pre>`;
           }
           
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = html;
+          
           panel.innerHTML = `
-            <div class="walkthrough-header-row">
-              <label class="cpp-toggle-label">
-                <input type="checkbox" class="cpp-only-toggle" checked />
-                Show C++ Only
-              </label>
-            </div>
-            <div class="walkthrough-content">
-              ${html}
+            <div class="split-pane-layout">
+              <div class="solution-strategy-pane"></div>
+              <div class="solution-code-pane">
+                <div class="walkthrough-header-row">
+                  <label class="cpp-toggle-label">
+                    <input type="checkbox" class="cpp-only-toggle" checked />
+                    Show C++ Only
+                  </label>
+                </div>
+                <div class="walkthrough-code-content"></div>
+              </div>
             </div>
           `;
 
-          const contentDiv = panel.querySelector(".walkthrough-content");
+          const strategyPane = panel.querySelector(".solution-strategy-pane");
+          const codeContent = panel.querySelector(".walkthrough-code-content");
+
+          Array.from(tempDiv.childNodes).forEach(child => {
+            const tag = child.tagName;
+            const text = child.textContent ? child.textContent.trim().toLowerCase() : "";
+            const isCodeOrLangHeader = tag === "PRE" || (tag === "H4" && ["c++", "cpp", "java", "python", "python3", "go", "golang", "rust", "typescript", "ts", "javascript", "js", "c#", "csharp", "c", "php", "swift", "kotlin", "scala", "ruby", "sql"].includes(text));
+            
+            if (isCodeOrLangHeader) {
+              codeContent.appendChild(child);
+            } else {
+              strategyPane.appendChild(child);
+            }
+          });
+
           const toggle = panel.querySelector(".cpp-only-toggle");
 
           function applyCppFilter() {
             const cppOnly = toggle.checked;
-            const headers = contentDiv.querySelectorAll("h4");
+            const headers = codeContent.querySelectorAll("h4");
             
             let hasCppHeader = false;
             headers.forEach(h4 => {
@@ -438,14 +458,14 @@ function renderQuestion(question) {
               }
             });
 
-            let warningBox = panel.querySelector(".cpp-unavailable-warning");
+            let warningBox = codeContent.querySelector(".cpp-unavailable-warning");
             if (cppOnly && !hasCppHeader && headers.length > 0) {
               if (!warningBox) {
                 warningBox = document.createElement("div");
                 warningBox.className = "cpp-unavailable-warning";
                 warningBox.style.cssText = "padding: 10px 14px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; color: #fbbf24; font-size: 0.85rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-weight: 500;";
                 warningBox.innerHTML = `<span>⚠️ C++ solution is not available for this problem. Showing other languages instead.</span>`;
-                contentDiv.parentNode.insertBefore(warningBox, contentDiv);
+                codeContent.insertBefore(warningBox, codeContent.firstChild);
               }
               headers.forEach(h4 => {
                 h4.style.display = "";
@@ -492,11 +512,23 @@ function renderQuestion(question) {
         });
     } else {
       panel.innerHTML = `
-        <h3>${solution.label} approach</h3>
-        <p>${solution.idea}</p>
-        <div class="complexity">
-          <span>Time: ${solution.time}</span>
-          <span>Space: ${solution.space}</span>
+        <div class="split-pane-layout">
+          <div class="solution-strategy-pane">
+            <h3>${solution.label} Approach</h3>
+            <p>${solution.idea}</p>
+            <div class="complexity">
+              <span>Time: ${solution.time}</span>
+              <span>Space: ${solution.space}</span>
+            </div>
+          </div>
+          <div class="solution-code-pane empty-code-pane">
+            <div class="no-code-message">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="muted-icon"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+              <p class="muted-text">Full solution code is available in the <strong>All Approaches (Walkthrough)</strong> tab.</p>
+              <p class="muted-text" style="font-size: 0.82rem; margin-top: 4px;">Or practice directly on LeetCode by clicking the button below.</p>
+              ${question.url ? `<a href="${question.url}" target="_blank" rel="noopener noreferrer" class="link-btn practice-link" style="margin-top: 16px; width: fit-content; align-self: center;"><span>Practice Now</span></a>` : ""}
+            </div>
+          </div>
         </div>
       `;
       addCopyButtons(panel);
@@ -534,6 +566,85 @@ function renderQuestions(questions) {
     empty.className = "empty-state";
     empty.textContent = "No questions match this focus. Try another topic or search term.";
     questionGrid.replaceChildren(empty);
+    return;
+  }
+
+  // If in company mode, render the Priority Slicing Table Grid!
+  if (state.mode === "companies") {
+    const tableContainer = document.createElement("div");
+    tableContainer.className = "company-table-container";
+    
+    const table = document.createElement("table");
+    table.className = "company-table";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Difficulty</th>
+          <th>Timeframe</th>
+          <th>Frequency</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    
+    const tbody = table.querySelector("tbody");
+    
+    const hasMore = questions.length > state.renderLimit;
+    const visibleQs = hasMore ? questions.slice(0, state.renderLimit) : questions;
+    
+    visibleQs.forEach((q) => {
+      const tr = document.createElement("tr");
+      tr.className = `company-row-item${q.id === state.activeDrawerQuestionId ? " active-row" : ""}`;
+      
+      const freqTag = q.tags.find(t => t.startsWith("Freq:"));
+      const freqVal = freqTag ? freqTag.replace("Freq:", "").trim() : "N/A";
+      
+      tr.innerHTML = `
+        <td class="col-id">#${q.frontendId || "N/A"}</td>
+        <td class="col-title">${q.title}</td>
+        <td class="col-difficulty"><span class="difficulty-chip ${q.difficulty.toLowerCase()}">${q.difficulty}</span></td>
+        <td class="col-timeframe">${q.topic}</td>
+        <td class="col-freq">${freqVal}</td>
+      `;
+      
+      tr.addEventListener("click", () => {
+        // Highlight active row
+        tbody.querySelectorAll(".active-row").forEach(r => r.classList.remove("active-row"));
+        tr.classList.add("active-row");
+        state.activeDrawerQuestionId = q.id;
+        openQuestionInDrawer(q);
+      });
+      
+      tbody.appendChild(tr);
+    });
+    
+    tableContainer.appendChild(table);
+    
+    const children = [tableContainer];
+    
+    if (hasMore) {
+      const footer = document.createElement("div");
+      footer.className = "load-more-container";
+      
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "load-more-btn";
+      btn.innerHTML = `
+        <span>Load More (${questions.length - state.renderLimit} remaining)</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      `;
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        state.renderLimit += ITEMS_PER_PAGE;
+        renderQuestions(filteredCompanyQuestions());
+      });
+      footer.appendChild(btn);
+      children.push(footer);
+    }
+    
+    questionGrid.replaceChildren(...children);
     return;
   }
 
@@ -680,6 +791,16 @@ function selectCompany(companyId) {
   state.selectedCompanyId = companyId;
   state.renderLimit = ITEMS_PER_PAGE;
   
+  if (companyList) {
+    companyList.classList.remove("active");
+  }
+  
+  const company = state.companies.find(c => c.id === companyId);
+  if (company && companySearchInput) {
+    companySearchInput.value = company.name;
+    state.companySearch = company.name;
+  }
+  
   const grid = document.querySelector("#questionGrid");
   grid.innerHTML = `<div class="empty-state"><p class="muted-text">Loading company questions... ⏳</p></div>`;
   
@@ -697,6 +818,37 @@ function selectCompany(companyId) {
       console.error(err);
       grid.innerHTML = `<div class="empty-state"><p class="muted-text" style="color:var(--danger)">Failed to load questions: ${err.message}</p></div>`;
     });
+}
+
+function openQuestionInDrawer(q) {
+  if (!rightDrawer || !drawerTitle || !drawerContent) return;
+  
+  drawerTitle.textContent = q.title;
+  
+  // Render the question card
+  const card = renderQuestion(q);
+  
+  // Make sure it is expanded inside the drawer
+  card.classList.remove("collapsed");
+  card.classList.add("expanded");
+  card.classList.add("in-drawer");
+  
+  drawerContent.replaceChildren(card);
+  
+  // Compile math and show copy buttons
+  addCopyButtons(card);
+  const contentHtml = card.querySelector(".problem-content-html");
+  if (contentHtml && !contentHtml.classList.contains("math-rendered")) {
+    renderMath(contentHtml);
+    contentHtml.classList.add("math-rendered");
+  }
+  const panel = card.querySelector(".solution-panel");
+  if (panel && !panel.classList.contains("math-rendered") && !panel.querySelector(".walkthrough-loader")) {
+    renderMath(panel);
+    panel.classList.add("math-rendered");
+  }
+  
+  rightDrawer.classList.add("open");
 }
 
 function renderTimeFilters() {
@@ -770,9 +922,15 @@ const sheetsSection = document.querySelector("#sheetsSection");
 const companiesSection = document.querySelector("#companiesSection");
 const testSection = document.querySelector("#testSection");
 const companySearchInput = document.querySelector("#companySearchInput");
+const companyList = document.querySelector("#companyList");
+const rightDrawer = document.querySelector("#rightDrawer");
+const drawerTitle = document.querySelector("#drawerTitle");
+const drawerContent = document.querySelector("#drawerContent");
+const closeDrawerBtn = document.querySelector("#closeDrawerBtn");
 
 tabSheets.addEventListener("click", () => {
   if (state.testActive) return;
+  if (rightDrawer) rightDrawer.classList.remove("open");
   tabSheets.classList.add("active");
   tabCompanies.classList.remove("active");
   tabTest.classList.remove("active");
@@ -789,6 +947,7 @@ tabSheets.addEventListener("click", () => {
 
 tabCompanies.addEventListener("click", () => {
   if (state.testActive) return;
+  if (rightDrawer) rightDrawer.classList.remove("open");
   tabCompanies.classList.add("active");
   tabSheets.classList.remove("active");
   tabTest.classList.remove("active");
@@ -810,6 +969,7 @@ tabCompanies.addEventListener("click", () => {
 
 tabTest.addEventListener("click", () => {
   if (state.testActive) return;
+  if (rightDrawer) rightDrawer.classList.remove("open");
   tabTest.classList.add("active");
   tabSheets.classList.remove("active");
   tabCompanies.classList.remove("active");
@@ -1008,12 +1168,7 @@ function startMockTest() {
       state.testGrades = {};
       state.testRemainingSeconds = durationMinutes * 60;
       
-      document.querySelector(".sidebar-tabs").style.pointerEvents = "none";
-      document.querySelector(".sidebar-tabs").style.opacity = "0.5";
-      document.querySelectorAll(".sheet-button, .topic-button, .company-button, .compact").forEach(el => {
-        el.style.pointerEvents = "none";
-        el.style.opacity = "0.5";
-      });
+      document.querySelector(".sidebar").classList.add("test-locked");
       document.querySelector("#startTestBtn").disabled = true;
       
       document.querySelector("#testNameLabel").textContent = `${sourceName} Mock Test`;
@@ -1209,8 +1364,13 @@ function updateTimerDisplay() {
   
   if (state.testRemainingSeconds < 300) {
     timerCard.classList.add("time-low");
+    timerCard.classList.remove("time-warning");
+  } else if (state.testRemainingSeconds < 600) {
+    timerCard.classList.add("time-warning");
+    timerCard.classList.remove("time-low");
   } else {
     timerCard.classList.remove("time-low");
+    timerCard.classList.remove("time-warning");
   }
 }
 
@@ -1355,12 +1515,7 @@ function exitMockTest() {
   state.testAnswers = {};
   state.testGrades = {};
   
-  document.querySelector(".sidebar-tabs").style.pointerEvents = "";
-  document.querySelector(".sidebar-tabs").style.opacity = "";
-  document.querySelectorAll(".sheet-button, .topic-button, .company-button, .compact").forEach(el => {
-    el.style.pointerEvents = "";
-    el.style.opacity = "";
-  });
+  document.querySelector(".sidebar").classList.remove("test-locked");
   document.querySelector("#startTestBtn").disabled = false;
   
   document.querySelector("#standardView").classList.remove("hidden");
@@ -1398,6 +1553,36 @@ searchInput.addEventListener("input", (event) => {
 showOptimalFirstInput.addEventListener("change", (event) => {
   state.showOptimalFirst = event.target.checked;
   render();
+});
+
+// Autocomplete Event Listeners for Company Search
+if (companySearchInput && companyList) {
+  companySearchInput.addEventListener("focus", () => {
+    companyList.classList.add("active");
+    renderCompanies();
+  });
+}
+
+// Close drawer button click listener
+if (closeDrawerBtn) {
+  closeDrawerBtn.addEventListener("click", () => {
+    if (rightDrawer) rightDrawer.classList.remove("open");
+  });
+}
+
+// Global click listener to handle click-outside for drawer and company list dropdown
+document.addEventListener("click", (e) => {
+  if (companySearchInput && companyList) {
+    if (!companySearchInput.contains(e.target) && !companyList.contains(e.target)) {
+      companyList.classList.remove("active");
+    }
+  }
+  
+  if (rightDrawer && rightDrawer.classList.contains("open")) {
+    if (!rightDrawer.contains(e.target) && !e.target.closest(".company-row-item")) {
+      rightDrawer.classList.remove("open");
+    }
+  }
 });
 
 // Init
