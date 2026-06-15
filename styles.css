@@ -2028,16 +2028,20 @@ pre .copy-code-btn.copied {
 .right-drawer {
   position: fixed;
   top: 0;
-  right: -550px;
-  width: 550px;
+  right: calc(-1 * var(--drawer-width, 550px));
+  width: var(--drawer-width, 550px);
+  max-width: 90vw;
+  min-width: 320px;
   height: 100vh;
   background: #090D10;
   border-left: 1px solid var(--panel-border);
   box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
   z-index: 1000;
-  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
+}
+.right-drawer:not(.drawer-resizing) {
+  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .right-drawer.open {
   right: 0;
@@ -2252,6 +2256,86 @@ samp,
   font-weight: 600;
   vertical-align: middle;
   margin-left: 8px;
+}
+
+/* Drawer resizer handle */
+.drawer-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 100;
+  transition: background 0.2s;
+}
+
+.drawer-resize-handle:hover,
+.right-drawer.drawer-resizing .drawer-resize-handle {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.drawer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.expand-drawer-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+.expand-drawer-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+/* Standalone View styling */
+.standalone-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeInUp 0.4s ease;
+}
+.standalone-toolbar {
+  display: flex;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.standalone-toolbar .back-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+.standalone-toolbar .back-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+.standalone-content {
+  width: 100%;
+}
+.standalone-content .question-card {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 

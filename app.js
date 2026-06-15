@@ -45,6 +45,7 @@ const state = {
   selectedCompanyId: null,
   companyQuestions: [],
   timeFilters: new Set(),
+  activeQuestion: null,
 
   // Mock Test state
   testActive: false,
@@ -727,6 +728,11 @@ function renderHeader() {
 function render() {
   const sheetsFilterContainer = document.querySelector("#sheetsFilterContainer");
   const companiesFilterContainer = document.querySelector("#companiesFilterContainer");
+  
+  const standaloneView = document.querySelector("#standaloneView");
+  const standardView = document.querySelector("#standardView");
+  if (standaloneView) standaloneView.classList.add("hidden");
+  if (standardView && state.mode !== "test") standardView.classList.remove("hidden");
 
   if (state.mode === "sheets") {
     if (sheetsFilterContainer) sheetsFilterContainer.classList.remove("hidden");
@@ -838,6 +844,7 @@ function selectCompany(companyId) {
 }
 
 function openQuestionInDrawer(q) {
+  state.activeQuestion = q;
   if (!rightDrawer || !drawerTitle || !drawerContent) return;
   
   drawerTitle.textContent = q.title;
@@ -1670,6 +1677,92 @@ if (sidebarToggleBtn && appShell) {
 
     const isCollapsed = appShell.classList.toggle("sidebar-collapsed");
     localStorage.setItem("sidebar-collapsed", isCollapsed);
+  });
+}
+
+// Drawer Drag Resizing
+const drawerResizer = document.querySelector("#drawerResizer");
+let isDrawerResizing = false;
+
+// Initialize drawer width from localStorage
+const savedDrawerWidth = localStorage.getItem("drawer-width");
+if (savedDrawerWidth) {
+  document.documentElement.style.setProperty("--drawer-width", savedDrawerWidth + "px");
+}
+
+if (drawerResizer && rightDrawer) {
+  drawerResizer.addEventListener("mousedown", (e) => {
+    isDrawerResizing = true;
+    rightDrawer.classList.add("drawer-resizing");
+    document.body.style.cursor = "col-resize";
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isDrawerResizing) return;
+    
+    let newWidth = window.innerWidth - e.clientX;
+    if (newWidth < 320) newWidth = 320;
+    if (newWidth > window.innerWidth * 0.9) newWidth = window.innerWidth * 0.9;
+    
+    document.documentElement.style.setProperty("--drawer-width", newWidth + "px");
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!isDrawerResizing) return;
+    
+    isDrawerResizing = false;
+    rightDrawer.classList.remove("drawer-resizing");
+    document.body.style.cursor = "";
+    
+    const currentWidth = getComputedStyle(document.documentElement).getPropertyValue("--drawer-width").trim();
+    if (currentWidth) {
+      localStorage.setItem("drawer-width", parseInt(currentWidth, 10));
+    }
+  });
+}
+
+// Standalone Single Question View Controller
+const expandDrawerBtn = document.querySelector("#expandDrawerBtn");
+const standaloneView = document.querySelector("#standaloneView");
+const standaloneContent = document.querySelector("#standaloneContent");
+const backToListBtn = document.querySelector("#backToListBtn");
+
+if (expandDrawerBtn) {
+  expandDrawerBtn.addEventListener("click", () => {
+    if (!state.activeQuestion) return;
+    
+    // Close drawer
+    if (rightDrawer) rightDrawer.classList.remove("open");
+    
+    // Render question card inside standalone container
+    const card = renderQuestion(state.activeQuestion);
+    card.classList.remove("collapsed");
+    card.classList.add("expanded");
+    
+    if (standaloneContent) {
+      standaloneContent.replaceChildren(card);
+      addCopyButtons(card);
+      const contentHtml = card.querySelector(".problem-content-html");
+      if (contentHtml && !contentHtml.classList.contains("math-rendered")) {
+        renderMath(contentHtml);
+        contentHtml.classList.add("math-rendered");
+      }
+    }
+    
+    // Switch views
+    const standardView = document.querySelector("#standardView");
+    if (standardView) standardView.classList.add("hidden");
+    if (standaloneView) standaloneView.classList.remove("hidden");
+  });
+}
+
+if (backToListBtn) {
+  backToListBtn.addEventListener("click", () => {
+    const standardView = document.querySelector("#standardView");
+    if (standardView) standardView.classList.remove("hidden");
+    if (standaloneView) standaloneView.classList.add("hidden");
+    if (standaloneContent) standaloneContent.replaceChildren();
   });
 }
 
