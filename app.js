@@ -166,10 +166,15 @@ function renderStats(questions) {
   const medium = questions.filter(q => q.difficulty.toLowerCase() === "medium").length;
   const hard = questions.filter(q => q.difficulty.toLowerCase() === "hard").length;
 
-  document.querySelector("#totalCount").textContent = questions.length;
-  document.querySelector("#easyCount").textContent = easy;
-  document.querySelector("#mediumCount").textContent = medium;
-  document.querySelector("#hardCount").textContent = hard;
+  const totalEl = document.querySelector("#totalCount");
+  const easyEl = document.querySelector("#easyCount");
+  const mediumEl = document.querySelector("#mediumCount");
+  const hardEl = document.querySelector("#hardCount");
+
+  if (totalEl) totalEl.textContent = questions.length;
+  if (easyEl) easyEl.textContent = easy;
+  if (mediumEl) mediumEl.textContent = medium;
+  if (hardEl) hardEl.textContent = hard;
 }
 
 function orderedSolutions(question) {
@@ -1034,47 +1039,54 @@ function renderTestOnboarding() {
   const topicHeading = document.querySelector("#topicHeading");
   const grid = document.querySelector("#questionGrid");
   
-  activeSheetLabel.textContent = "Assessments & Mock Rounds";
-  topicHeading.textContent = "Prepare under real-world pressure";
+  if (activeSheetLabel) activeSheetLabel.textContent = "Assessments & Mock Rounds";
+  if (topicHeading) topicHeading.textContent = "Prepare under real-world pressure";
   
-  document.querySelector("#totalCount").textContent = "0";
-  document.querySelector("#easyCount").textContent = "0";
-  document.querySelector("#mediumCount").textContent = "0";
-  document.querySelector("#hardCount").textContent = "0";
+  const totalEl = document.querySelector("#totalCount");
+  const easyEl = document.querySelector("#easyCount");
+  const mediumEl = document.querySelector("#mediumCount");
+  const hardEl = document.querySelector("#hardCount");
   
-  grid.innerHTML = `
-    <div class="empty-state" style="text-align: left; padding: 40px; max-width: 650px; margin: 0 auto; line-height: 1.6;">
-      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary); margin-top: 0; margin-bottom: 12px; font-weight: 800;">
-        Mock Assessment Mode
-      </h3>
-      <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">
-        Simulate an actual technical phone screen or onsite coding round. Choose a question source and difficulty preset in the sidebar, set your target timer, and start.
-      </p>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
-          <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">⏱️ Timed Pressure</h4>
-          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Timer counts down automatically. The assessment auto-submits once the time expires.</p>
+  if (totalEl) totalEl.textContent = "0";
+  if (easyEl) easyEl.textContent = "0";
+  if (mediumEl) mediumEl.textContent = "0";
+  if (hardEl) hardEl.textContent = "0";
+  
+  if (grid) {
+    grid.innerHTML = `
+      <div class="empty-state" style="text-align: left; padding: 40px; max-width: 650px; margin: 0 auto; line-height: 1.6;">
+        <h3 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary); margin-top: 0; margin-bottom: 12px; font-weight: 800;">
+          Mock Assessment Mode
+        </h3>
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">
+          Simulate an actual technical phone screen or onsite coding round. Choose a question source and difficulty preset in the sidebar, set your target timer, and start.
+        </p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
+            <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">⏱️ Timed Pressure</h4>
+            <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Timer counts down automatically. The assessment auto-submits once the time expires.</p>
+          </div>
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
+            <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">🚫 No Solution Peeking</h4>
+            <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Official solutions and hints are locked during the test so you can focus on writing your code.</p>
+          </div>
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
+            <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">📝 Code Sketching</h4>
+            <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Use the integrated scratchpad editor for each problem to type out your solutions.</p>
+          </div>
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
+            <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">✅ Self-Grading</h4>
+            <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Review your sketch code side-by-side with the official optimal walkthroughs to grade yourself.</p>
+          </div>
         </div>
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
-          <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">🚫 No Solution Peeking</h4>
-          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Official solutions and hints are locked during the test so you can focus on writing your code.</p>
-        </div>
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
-          <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">📝 Code Sketching</h4>
-          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Use the integrated scratchpad editor for each problem to type out your solutions.</p>
-        </div>
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
-          <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">✅ Self-Grading</h4>
-          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Review your sketch code side-by-side with the official optimal walkthroughs to grade yourself.</p>
-        </div>
+        
+        <p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic; margin: 0; text-align: center;">
+          Select your config in the sidebar and click <strong>Start Mock Round</strong> to begin.
+        </p>
       </div>
-      
-      <p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic; margin: 0; text-align: center;">
-        Select your config in the sidebar and click <strong>Start Mock Round</strong> to begin.
-      </p>
-    </div>
-  `;
+    `;
+  }
 }
 
 function getRandomSample(arr, size) {
