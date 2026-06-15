@@ -309,14 +309,9 @@ function renderQuestion(question) {
     linksContainer.appendChild(btn);
   }
 
-  // Populate Topics, Company Tags, and Hints panels
+  // Populate Topics panel
   const topicsBtn = node.querySelector(".topics-btn");
-  const companiesBtn = node.querySelector(".companies-btn");
-  const hintsBtn = node.querySelector(".hints-btn");
-
   const topicsPanel = node.querySelector(".topics-panel");
-  const companiesPanel = node.querySelector(".companies-panel");
-  const hintsPanel = node.querySelector(".hints-panel");
 
   if (question.topicTags && question.topicTags.length) {
     topicsPanel.replaceChildren(
@@ -331,61 +326,11 @@ function renderQuestion(question) {
     topicsPanel.innerHTML = `<span class="muted-text">No topic tags available.</span>`;
   }
 
-  if (question.companyTags && question.companyTags.length) {
-    companiesPanel.replaceChildren(
-      ...question.companyTags.map(company => {
-        const span = document.createElement("span");
-        span.className = "company-tag-chip";
-        span.textContent = company;
-        return span;
-      })
-    );
-  } else {
-    companiesPanel.innerHTML = `<span class="muted-text">No company tags available (Premium LeetCode).</span>`;
-  }
-
-  if (question.hints && question.hints.length) {
-    hintsPanel.replaceChildren(
-      ...question.hints.map((hint, idx) => {
-        const div = document.createElement("div");
-        div.className = "hint-item";
-        div.innerHTML = `<strong>Hint ${idx + 1}:</strong> <p>${hint}</p>`;
-        return div;
-      })
-    );
-  } else {
-    hintsPanel.innerHTML = `<span class="muted-text">No hints available for this problem.</span>`;
-  }
-
   // Toggle Panels (stopPropagation prevents the card from collapsing)
   topicsBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     const isHidden = topicsPanel.classList.toggle("hidden");
     topicsBtn.classList.toggle("active", !isHidden);
-    companiesBtn.classList.remove("active");
-    companiesPanel.classList.add("hidden");
-    hintsBtn.classList.remove("active");
-    hintsPanel.classList.add("hidden");
-  });
-
-  companiesBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isHidden = companiesPanel.classList.toggle("hidden");
-    companiesBtn.classList.toggle("active", !isHidden);
-    topicsBtn.classList.remove("active");
-    topicsPanel.classList.add("hidden");
-    hintsBtn.classList.remove("active");
-    hintsPanel.classList.add("hidden");
-  });
-
-  hintsBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isHidden = hintsPanel.classList.toggle("hidden");
-    hintsBtn.classList.toggle("active", !isHidden);
-    topicsBtn.classList.remove("active");
-    topicsPanel.classList.add("hidden");
-    companiesBtn.classList.remove("active");
-    companiesPanel.classList.add("hidden");
   });
 
   // Render description HTML
