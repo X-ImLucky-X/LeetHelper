@@ -451,7 +451,7 @@ CSV-Based Company Dataset
 ## Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/LeetHelper.git
+git clone https://github.com/X-ImLucky-X/LeetHelper
 ```
 
 ---
