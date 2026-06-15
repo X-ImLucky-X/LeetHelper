@@ -13,6 +13,11 @@ Review problem descriptions, constraints, company tags, and code solutions all i
   - **Timeframe Grouping**: Questions are grouped by timeframe priority (`30 Days`, `3 Months`, `6 Months`, `> 6 Months`).
   - **Frequency Sorting**: Questions are sorted inside their timeframes by interview frequency descending.
   - **Search Companies**: Search and filter through the list of 650+ companies in real-time.
+- **Mock Coding Assessment Mode (New)**: Test your skills in a distraction-free, timed round.
+  - **Customizable Mix**: Select presets (Standard, Google Round, Full Assessment) or configure custom Easy/Medium/Hard question counts.
+  - **Live Countdown Timer**: Built-in timer with colored warnings (pulse red alert under 5 minutes) and automatic test submission on expiration.
+  - **Integrated Code Editor**: Write and sketch out solutions directly in the card scratchpad. Solutions are locked during the test to prevent peeking.
+  - **Self-Grading Scorecard**: Compare your code side-by-side with official optimal solutions and self-grade your answers to generate an interactive scorecard.
 - **LaTeX Math Rendering**: Natively parses and renders mathematical expressions ($...$ and $$...$$) using KaTeX for crisp math formulas.
 - **Code Walkthrough Solutions**: Fetches and renders detailed solutions dynamically from GitHub.
 - **Copy Code Integration**: Hover over any code block in descriptions or walkthroughs to copy the code snippet to your clipboard in one click.
