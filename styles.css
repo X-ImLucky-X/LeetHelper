@@ -1540,3 +1540,134 @@ pre .copy-code-btn.copied {
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Compiler & Stdin Section inside Code Editor */
+.compiler-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.compiler-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 600px) {
+  .compiler-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.compiler-input-col,
+.compiler-output-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editor-label {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.compiler-stdin {
+  width: 100%;
+  height: 90px;
+  background: #05070c;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: #cbd5e1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  padding: 8px 10px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.compiler-stdin:focus {
+  border-color: var(--accent);
+}
+
+.compiler-results-box {
+  width: 100%;
+  height: 90px;
+  background: #03050a;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  padding: 8px 10px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  transition: all 0.2s ease;
+}
+
+.compiler-results-box.success {
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.02);
+}
+
+.compiler-results-box.error {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.02);
+}
+
+.compiler-results-box .placeholder {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.compiler-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.run-code-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #c7d2fe;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.run-code-btn:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.run-code-btn:disabled {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--panel-border);
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
+.run-code-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.run-code-btn:hover:not(:disabled) svg {
+  transform: scale(1.1);
+}
+
+

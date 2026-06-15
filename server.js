@@ -17,6 +17,130 @@ const contentTypes = {
 let companiesCache = null;
 const companyQuestionsCache = new Map();
 
+const { spawn } = require("child_process");
+
+// Ensure temp directory exists for running code
+const tempDir = path.join(root, "temp_run");
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
+
+function runProcess(command, args, stdinInput, timeoutMs = 5000) {
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(command, args);
+    } catch (err) {
+      resolve({ stdout: "", stderr: `System Error: Failed to start process '${command}'. Make sure it is installed and in your PATH.\nError: ${err.message}`, code: -1 });
+      return;
+    }
+    
+    let stdout = "";
+    let stderr = "";
+    
+    const timer = setTimeout(() => {
+      try {
+        child.kill("SIGKILL");
+      } catch (e) {}
+      resolve({ stdout, stderr: stderr + "\nExecution Timed Out (Limit 5s)", code: null });
+    }, timeoutMs);
+    
+    child.stdout.on("data", data => {
+      stdout += data.toString();
+    });
+    
+    child.stderr.on("data", data => {
+      stderr += data.toString();
+    });
+    
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve({ stdout, stderr, code });
+    });
+    
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      resolve({ stdout, stderr: stderr + `\nExecution Error: ${err.message}\nMake sure '${command}' is installed and in your PATH.`, code: -1 });
+    });
+    
+    if (stdinInput) {
+      try {
+        child.stdin.write(stdinInput);
+      } catch (e) {
+        // stdin stream might be closed or erroring, ignore
+      }
+    }
+    try {
+      child.stdin.end();
+    } catch (e) {}
+  });
+}
+
+async function executeCode(code, lang, input) {
+  if (lang === "javascript" || lang === "js") {
+    const filePath = path.join(tempDir, "Main.js");
+    fs.writeFileSync(filePath, code, "utf-8");
+    const res = await runProcess("node", [filePath], input);
+    return res;
+  }
+  
+  if (lang === "python" || lang === "py") {
+    const filePath = path.join(tempDir, "Main.py");
+    fs.writeFileSync(filePath, code, "utf-8");
+    const res = await runProcess("python", [filePath], input);
+    return res;
+  }
+  
+  if (lang === "cpp") {
+    const sourcePath = path.join(tempDir, "Main.cpp");
+    const exeName = process.platform === "win32" ? "Main.exe" : "Main.out";
+    const exePath = path.join(tempDir, exeName);
+    
+    fs.writeFileSync(sourcePath, code, "utf-8");
+    
+    if (fs.existsSync(exePath)) {
+      try { fs.unlinkSync(exePath); } catch(e) {}
+    }
+    
+    const comp = await runProcess("g++", ["-O3", sourcePath, "-o", exePath], null, 10000);
+    if (comp.code !== 0) {
+      return {
+        stdout: comp.stdout,
+        stderr: "Compilation Error:\n" + comp.stderr,
+        code: comp.code
+      };
+    }
+    
+    const res = await runProcess(exePath, [], input);
+    return res;
+  }
+  
+  if (lang === "java") {
+    let className = "Main";
+    const match = code.match(/class\s+(\w+)/);
+    if (match) {
+      className = match[1];
+    }
+    
+    const sourcePath = path.join(tempDir, `${className}.java`);
+    fs.writeFileSync(sourcePath, code, "utf-8");
+    
+    const comp = await runProcess("javac", [sourcePath], null, 10000);
+    if (comp.code !== 0) {
+      return {
+        stdout: comp.stdout,
+        stderr: "Compilation Error:\n" + comp.stderr,
+        code: comp.code
+      };
+    }
+    
+    const res = await runProcess("java", ["-cp", tempDir, className], input);
+    return res;
+  }
+  
+  return { stdout: "", stderr: `Unsupported language: ${lang}`, code: -1 };
+}
+
 function parseCSV(filePath) {
   if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, "utf-8");
@@ -193,6 +317,34 @@ const server = http.createServer((request, response) => {
     
     response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
     response.end(JSON.stringify(questions));
+    return;
+  }
+
+  // Endpoint: Run user code locally
+  if (requestedPath === "/api/run" && request.method === "POST") {
+    let body = "";
+    request.on("data", chunk => {
+      body += chunk;
+    });
+    request.on("end", async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { code, lang, input } = payload;
+        
+        if (!code || !lang) {
+          response.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          response.end(JSON.stringify({ error: "Missing code or lang parameter" }));
+          return;
+        }
+        
+        const result = await executeCode(code, lang, input);
+        response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(JSON.stringify(result));
+      } catch (err) {
+        response.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(JSON.stringify({ error: err.message }));
+      }
+    });
     return;
   }
 

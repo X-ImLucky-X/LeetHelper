@@ -1044,6 +1044,8 @@ function renderTestQuestions() {
   const grid = document.querySelector("#testQuestionGrid");
   grid.replaceChildren();
   
+  if (!state.testStdins) state.testStdins = {};
+  
   state.testQuestions.forEach((q, idx) => {
     const card = renderQuestion(q);
     
@@ -1067,11 +1069,35 @@ function renderTestQuestions() {
           <option value="javascript">JavaScript</option>
         </select>
       </div>
-      <textarea class="editor-textarea" placeholder="Write your approach or code here..." aria-label="Code Editor"></textarea>
+      <textarea class="editor-textarea" placeholder="Write your code or approach here...\n\nNote: To run your code, include standard I/O driver code (e.g. main() or console.log) that processes the input and prints the result." aria-label="Code Editor"></textarea>
+      
+      <div class="compiler-section">
+        <div class="compiler-row">
+          <div class="compiler-input-col">
+            <label class="editor-label">Custom Input (stdin)</label>
+            <textarea class="compiler-stdin" placeholder="Enter custom input here..." aria-label="Custom Input"></textarea>
+          </div>
+          <div class="compiler-output-col">
+            <label class="editor-label">Execution Results</label>
+            <div class="compiler-results-box">
+              <span class="placeholder">Click 'Run Code' to see output...</span>
+            </div>
+          </div>
+        </div>
+        <div class="compiler-actions">
+          <button class="run-code-btn" type="button">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span>Run Code</span>
+          </button>
+        </div>
+      </div>
     `;
     
     const textarea = editorPanel.querySelector(".editor-textarea");
     const langSelect = editorPanel.querySelector(".editor-lang-select");
+    const stdinArea = editorPanel.querySelector(".compiler-stdin");
+    const resultsBox = editorPanel.querySelector(".compiler-results-box");
+    const runBtn = editorPanel.querySelector(".run-code-btn");
     
     const qId = q.id || q.title;
     if (state.testAnswers[qId]) {
@@ -1082,6 +1108,9 @@ function renderTestQuestions() {
     } else {
       state.testSelectedLangs[qId] = langSelect.value;
     }
+    if (state.testStdins[qId]) {
+      stdinArea.value = state.testStdins[qId];
+    }
     
     textarea.addEventListener("input", (e) => {
       state.testAnswers[qId] = e.target.value;
@@ -1089,6 +1118,66 @@ function renderTestQuestions() {
     
     langSelect.addEventListener("change", (e) => {
       state.testSelectedLangs[qId] = e.target.value;
+    });
+    
+    stdinArea.addEventListener("input", (e) => {
+      state.testStdins[qId] = e.target.value;
+    });
+    
+    runBtn.addEventListener("click", () => {
+      const codeVal = textarea.value;
+      const langVal = langSelect.value;
+      const stdinVal = stdinArea.value;
+      
+      runBtn.disabled = true;
+      runBtn.querySelector("span").textContent = "Running...";
+      resultsBox.className = "compiler-results-box"; // Clear status classes
+      resultsBox.innerHTML = `Running code... ⏳`;
+      
+      fetch("/api/run", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          code: codeVal,
+          lang: langVal,
+          input: stdinVal
+        })
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          runBtn.disabled = false;
+          runBtn.querySelector("span").textContent = "Run Code";
+          
+          if (data.code === 0) {
+            resultsBox.classList.add("success");
+            let output = data.stdout;
+            if (data.stderr) {
+              output += "\n" + data.stderr;
+            }
+            resultsBox.textContent = output || "Success (Process finished with no output)";
+          } else {
+            resultsBox.classList.add("error");
+            let output = "";
+            if (data.stderr) {
+              output += data.stderr;
+            }
+            if (data.stdout) {
+              output += (output ? "\n" : "") + data.stdout;
+            }
+            resultsBox.textContent = output || `Error: Process exited with code ${data.code}`;
+          }
+        })
+        .catch(err => {
+          runBtn.disabled = false;
+          runBtn.querySelector("span").textContent = "Run Code";
+          resultsBox.classList.add("error");
+          resultsBox.textContent = `Error: ${err.message}`;
+        });
     });
     
     const detailsDiv = card.querySelector(".details-collapsible");
@@ -1147,6 +1236,8 @@ function submitMockTest(isTimeout = false) {
   
   document.querySelectorAll(".editor-textarea").forEach(ta => ta.disabled = true);
   document.querySelectorAll(".editor-lang-select").forEach(sel => sel.disabled = true);
+  document.querySelectorAll(".compiler-stdin").forEach(ta => ta.disabled = true);
+  document.querySelectorAll(".run-code-btn").forEach(btn => btn.disabled = true);
   
   document.querySelectorAll("#testQuestionGrid .question-card").forEach(card => {
     card.classList.remove("in-test");

@@ -9,3 +9,6 @@ scratch/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Temp compiler runs
+temp_run/
