@@ -1,0 +1,11 @@
+# Cache and data caches
+leetcode-cache/
+
+# Temporary and local scratch files
+scratch/
+.gemini/
+.system_generated/
+
+# OS files
+.DS_Store
+Thumbs.db

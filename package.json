@@ -1,0 +1,9 @@
+{
+  "name": "leethelper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A focused coding interview revision web app for popular DSA sheets.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
