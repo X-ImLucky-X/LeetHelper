@@ -1,102 +1,516 @@
-# LeetHelper 🚀
+# 🚀 LeetHelper
 
-LeetHelper is a premium, ultra-fast coding interview revision dashboard. It lets you select popular DSA sheets (like NeetCode 150 or Striver A2Z) or browse interview questions from over **650+ companies** (like Google, Amazon, Microsoft, Meta). 
+> **An all-in-one interview preparation platform combining curated DSA sheets, company-specific question banks, and realistic coding assessments.**
 
-Review problem descriptions, constraints, company tags, and code solutions all in one single, focused screen without clicking back and forth.
+LeetHelper is a highly responsive **Single Page Application (SPA)** designed to streamline technical interview preparation. Instead of switching between multiple websites for problem lists, company tags, explanations, and mock tests, LeetHelper consolidates everything into one productivity-focused interface.
 
----
-
-## Key Features
-
-- **DSA Sheets Mode**: Browse popular curated sheets with topic filters, search, and difficulty metrics.
-- **Company Interview Sheets Mode**: Explore questions asked in real interviews at **657 companies**.
-  - **Timeframe Grouping**: Questions are grouped by timeframe priority (`30 Days`, `3 Months`, `6 Months`, `> 6 Months`).
-  - **Frequency Sorting**: Questions are sorted inside their timeframes by interview frequency descending.
-  - **Search Companies**: Search and filter through the list of 650+ companies in real-time.
-- **Mock Coding Assessment Mode (New)**: Test your skills in a distraction-free, timed round.
-  - **Customizable Mix**: Select presets (Standard, Google Round, Full Assessment) or configure custom Easy/Medium/Hard question counts.
-  - **Live Countdown Timer**: Built-in timer with colored warnings (pulse red alert under 5 minutes) and automatic test submission on expiration.
-  - **Integrated Code Editor**: Write and sketch out solutions directly in the card scratchpad. Solutions are locked during the test to prevent peeking.
-  - **Self-Grading Scorecard**: Compare your code side-by-side with official optimal solutions and self-grade your answers to generate an interactive scorecard.
-- **LaTeX Math Rendering**: Natively parses and renders mathematical expressions ($...$ and $$...$$) using KaTeX for crisp math formulas.
-- **Code Walkthrough Solutions**: Fetches and renders detailed solutions dynamically from GitHub.
-- **Copy Code Integration**: Hover over any code block in descriptions or walkthroughs to copy the code snippet to your clipboard in one click.
-- **Responsive Premium Theme**: Built using a modern obsidian indigo dark mode theme with glassmorphism sidebar effects, smooth scale animations, and difficulty-based glows.
+Built with aspiring software engineers in mind, the platform helps users revise efficiently, target specific companies, and simulate real coding assessments under time constraints.
 
 ---
 
-## Technical Stack & Architecture
+## ✨ Features
 
-LeetHelper is designed to be lightweight, portable, and extremely fast:
-
-1. **Frontend**: Pure HTML5, CSS3 (Vanilla), and Vanilla JavaScript.
-   - External libraries loaded via CDN: `marked.js` (Markdown parsing) and `katex.js` (Math formula rendering).
-   - Optimizations: Render-limiting (only renders 50 company list items at a time) and search input debouncing (120ms) to ensure smooth layout rendering.
-2. **Backend**: A minimal Node.js HTTP server (`server.js`) with **zero npm dependencies**.
-   - Serves static assets.
-   - Exposes REST API endpoints `/api/companies` and `/api/company` to parse CSV directories on the fly.
-   - **In-Memory Caching**: Caches parsed lists in memory so subsequent company loads serve in less than 1ms.
-
----
-
-## How to Run Locally
-
-Since LeetHelper has no build step and zero external npm dependencies, running it is simple:
-
-1. Clone or download this folder.
-2. Ensure you have [Node.js](https://nodejs.org/) installed.
-3. Open a terminal inside the project directory and run:
-   ```bash
-   node server.js
-   ```
-4. Open your browser and navigate to:
-   ```
-   http://127.0.0.1:5173
-   ```
+* 📚 Browse popular DSA sheets (Striver A2Z, NeetCode 150, TUF, and more)
+* 🔍 Filter questions by topic and difficulty
+* 📊 Visualize difficulty distributions dynamically
+* 💡 Access multiple solution approaches for each problem
+* 📖 View complete walkthroughs from the Doocs LeetCode repository
+* 🏢 Prepare using interview questions from **650+ companies**
+* ⏳ Filter company questions by interview recency
+* 🧪 Take realistic timed mock assessments
+* 💻 Compile and execute code directly in the browser
+* 📋 Copy code snippets instantly
+* 🧮 Render mathematical notations using LaTeX
+* 📈 Self-evaluate performance using interactive scorecards
 
 ---
 
-## How to Publish & Share
+# 🏗️ Application Architecture
 
-Since LeetHelper is a self-contained Node.js web app, you can easily host it for free so anyone can use it.
+LeetHelper follows a modular SPA architecture:
 
-### Option 1: Render (Recommended - Free & Online Compiler Support)
-1. Push this repository to your GitHub account (see instructions below).
-2. Go to [Render](https://render.com/) and log in with GitHub.
-3. Click **New** -> **Web Service**.
-4. Connect this repository.
-5. Render will automatically detect the `Dockerfile` in the repository root and set the **Runtime/Environment** to **Docker** (fully compatible with Render's free tier).
-6. Click **Deploy Web Service**. Render will automatically compile and build the container, setting up C++, Java, Python, and Node compiler runtimes in the cloud.
-7. Render will assign a free `onrender.com` URL (e.g., `https://leethelper.onrender.com`) that anyone can use to browse questions and run code online!
+```text
+LeetHelper
+│
+├── Sidebar Navigation
+│     ├── Sheets
+│     ├── Companies
+│     └── Mock Test
+│
+└── Main Content Viewport
+      ├── DSA Revision Engine
+      ├── Company Interview Explorer
+      └── Assessment Simulator
+```
 
-### Option 2: Heroku
-1. Create a Heroku account and click **Create New App**.
-2. Connect your GitHub repository.
-3. Under the **Deploy** tab, select **Enable Automatic Deploys** and click **Deploy Branch**.
-4. Heroku will read the `package.json` start command and serve the app.
+The layout consists of:
+
+* **Sticky Sidebar Navigation**
+* **Dynamic Content Viewport**
+* **Client-side View Switching**
+* **On-demand Data Fetching**
+* **Integrated Compiler Backend**
 
 ---
 
-## Committing and Pushing to GitHub
+# 📚 Sheets Page
 
-Run these commands in your terminal to initialize git, commit the clean files, and push to your GitHub repository:
+## Purpose
+
+Acts as the primary revision hub for curated DSA sheets.
+
+Supports collections such as:
+
+* Striver A2Z Sheet
+* NeetCode 150
+* TUF Sheet
+* Custom DSA Sheets
+
+---
+
+## Key Components
+
+### 🗂️ Sheet Selector
+
+Quickly switch between different preparation sheets.
+
+---
+
+### 🏷️ Topic Filters
+
+Filter questions by categories including:
+
+* Arrays
+* Strings
+* Linked Lists
+* Trees
+* Graphs
+* Dynamic Programming
+* Greedy
+* Backtracking
+* Sliding Window
+* And more...
+
+Supports:
+
+* Single-topic filtering
+* Multi-topic filtering
+
+---
+
+### 📊 Difficulty Dashboard
+
+Displays real-time statistics for filtered questions.
+
+Shows:
+
+```text
+Easy    → Count
+Medium  → Count
+Hard    → Count
+```
+
+---
+
+### 📝 Interactive Question Cards
+
+Each question card contains:
+
+* Problem title
+* Difficulty badge
+* Topic labels
+* Expansion controls
+
+---
+
+### 🔗 Practice Resources
+
+Direct shortcuts to:
+
+* LeetCode problem page
+* Video explanations
+* Written editorials
+
+---
+
+### 💡 Multi-Approach Solutions
+
+View various approaches including:
+
+```text
+Brute Force
+Better Solution
+Optimal Solution
+```
+
+Each approach provides:
+
+* Explanation
+* Code implementation
+* Time complexity
+* Space complexity
+
+---
+
+### 📖 Doocs Walkthrough Integration
+
+Automatically fetches detailed markdown explanations from the **Doocs LeetCode repository**.
+
+Features:
+
+* Full editorial walkthroughs
+* Syntax-highlighted code
+* Optional **C++ Only Mode**
+
+---
+
+### 📋 Copy-to-Clipboard
+
+Hover over any code snippet to instantly copy it.
+
+---
+
+### 🧮 LaTeX Support
+
+Mathematical expressions such as:
+
+```text
+O(N log N)
+O(V + E)
+2^N
+```
+
+are rendered beautifully for readability.
+
+---
+
+# 🏢 Companies Page
+
+## Purpose
+
+Focused preparation for company-specific interview rounds.
+
+Provides access to questions asked by **650+ technology companies**.
+
+---
+
+## Key Components
+
+### 🔍 Company Search
+
+Instantly search companies including:
+
+* Google
+* Amazon
+* Microsoft
+* Meta
+* Adobe
+* Uber
+* Netflix
+
+and hundreds more.
+
+---
+
+### ⏳ Recency Filters
+
+Filter questions by when they were reported:
+
+```text
+Last 30 Days
+Last 3 Months
+Last 6 Months
+More than 6 Months
+```
+
+---
+
+### 📈 Dynamic Question Ranking
+
+Questions are loaded dynamically through:
+
+```text
+/api/company?name=XYZ
+```
+
+Ranking factors include:
+
+* Interview frequency
+* Priority score
+* Recent appearance trends
+
+---
+
+### 📖 Walkthrough Support
+
+Fetch detailed explanations using LeetCode frontend IDs.
+
+Includes:
+
+* Problem discussion
+* Optimal solutions
+* Complexity analysis
+
+---
+
+# 🧪 Mock Test Mode
+
+## Purpose
+
+Simulates realistic online coding assessments.
+
+Designed to recreate interview pressure and improve problem-solving speed.
+
+---
+
+## Test Configuration
+
+Choose question sources from:
+
+```text
+DSA Sheets
+Company Questions
+```
+
+Preset modes include:
+
+```text
+Google Round
+Full Assessment
+Custom Assessment
+```
+
+---
+
+## 🔒 Distraction-Free Lockout
+
+During an active test:
+
+* Sidebar navigation is disabled
+* Browsing controls are dimmed
+* Accidental exits are prevented
+
+---
+
+## 📝 Exam View
+
+Displays all selected questions in an exam-focused layout.
+
+Features:
+
+* Expanded problem statements
+* Clean reading interface
+* Timer visibility
+
+---
+
+## ⏰ Live Countdown Timer
+
+Tracks remaining exam duration.
+
+Behavior:
+
+```text
+Normal State
+↓
+Warning State (< 5 Minutes)
+↓
+Red Pulsing Alert
+```
+
+---
+
+# 💻 Sandbox Compiler
+
+Integrated execution environment supporting:
+
+```text
+C++
+Java
+Python
+JavaScript
+```
+
+---
+
+## Compiler Features
+
+### Code Editor
+
+Write solutions directly inside the platform.
+
+---
+
+### Custom Input Support
+
+Provide stdin values for testing.
+
+---
+
+### Output Console
+
+Displays:
+
+* Standard Output
+* Runtime Errors
+* Compilation Errors
+
+---
+
+### Secure Execution
+
+Code execution is processed through the backend compiler service.
+
+Safety measures include:
+
+```text
+5-Second Timeout
+Execution Isolation
+Infinite Loop Protection
+```
+
+---
+
+# 📊 Interactive Scorecard
+
+After submission:
+
+* Solutions become locked
+* Official editorials are revealed
+* Self-assessment begins
+
+---
+
+## Self-Grading Options
+
+For each question:
+
+```text
+✓ Correct
+✗ Incorrect
+```
+
+---
+
+## Performance Meter
+
+Score visualization includes:
+
+```text
+Green Glow  → Passing (≥ 70%)
+Red Glow    → Improvement Needed (< 70%)
+```
+
+---
+
+# 🛠️ Tech Stack
+
+## Frontend
+
+```text
+React
+TypeScript
+Vite
+Tailwind CSS
+```
+
+---
+
+## Backend
+
+```text
+Node.js
+Express.js
+```
+
+---
+
+## Compiler Infrastructure
+
+```text
+Sandboxed Execution Environment
+5-Second Runtime Limits
+stdin Support
+```
+
+---
+
+## Additional Integrations
+
+```text
+Doocs LeetCode Repository
+LaTeX Rendering Engine
+Clipboard Utilities
+CSV-Based Company Dataset
+```
+
+---
+
+# 🚀 Getting Started
+
+## Clone the repository
 
 ```bash
-# Initialize git (if not already done)
-git init
-
-# Stage all files (excluding folders in .gitignore)
-git add .
-
-# Create the initial commit
-git commit -m "Initial commit: Redesigned LeetHelper with companywise questions, KaTeX math rendering, and copy code feature"
-
-# Add your GitHub remote repository (replace with your actual repo link)
-git remote add origin https://github.com/YOUR_USERNAME/LeetHelper.git
-
-# Rename branch to main
-git branch -M main
-
-# Push the code to GitHub
-git push -u origin main
+git clone https://github.com/YOUR_USERNAME/LeetHelper.git
 ```
+
+---
+
+## Install frontend dependencies
+
+```bash
+npm install
+```
+
+---
+
+## Start the frontend
+
+```bash
+npm run dev
+```
+
+---
+
+## Start the backend server
+
+```bash
+node server.js
+```
+
+---
+
+# 🎯 Why LeetHelper?
+
+Interview preparation often involves juggling multiple platforms:
+
+* One for DSA sheets,
+* another for company questions,
+* another for explanations,
+* and yet another for mock assessments.
+
+**LeetHelper unifies the entire preparation workflow into a single, focused environment.**
+
+It is designed to help candidates:
+
+* Revise efficiently,
+* practice strategically,
+* and perform confidently during interviews.
+
+---
+
+# 👨‍💻 Author
+
+**Lakshya Kumar Singh**
+
+B.Tech CSE Student • Software Developer • Machine Learning Enthusiast
+
+---
+
+<div align="center">
+
+### ⭐ If you find LeetHelper useful, consider starring the repository!
+
+**Practice Smarter. Interview Better.**
+
+</div>

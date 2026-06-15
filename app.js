@@ -229,6 +229,26 @@ function addCopyButtons(container) {
   });
 }
 
+function applySyntaxHighlighting(container) {
+  if (typeof hljs === 'undefined') return;
+  container.querySelectorAll('pre code').forEach(block => {
+    if (!block.dataset.highlighted) {
+      hljs.highlightElement(block);
+    }
+  });
+  // Also handle bare <pre> blocks that have no <code> wrapper
+  container.querySelectorAll('pre:not(:has(code))').forEach(pre => {
+    if (!pre.dataset.highlighted) {
+      const code = document.createElement('code');
+      code.textContent = pre.textContent;
+      pre.textContent = '';
+      pre.appendChild(code);
+      hljs.highlightElement(code);
+      pre.dataset.highlighted = '1';
+    }
+  });
+}
+
 function renderMath(container) {
   if (typeof renderMathInElement === 'function') {
     renderMathInElement(container, {
@@ -419,91 +439,138 @@ function renderQuestion(question) {
           
           const tempDiv = document.createElement("div");
           tempDiv.innerHTML = html;
-          
-          panel.innerHTML = `
-            <div class="split-pane-layout">
-              <div class="solution-strategy-pane"></div>
-              <div class="solution-code-pane">
-                <div class="walkthrough-header-row">
-                  <label class="cpp-toggle-label">
-                    <input type="checkbox" class="cpp-only-toggle" checked />
-                    Show C++ Only
-                  </label>
-                </div>
-                <div class="walkthrough-code-content"></div>
-              </div>
-            </div>
-          `;
 
-          const strategyPane = panel.querySelector(".solution-strategy-pane");
-          const codeContent = panel.querySelector(".walkthrough-code-content");
+          const LANG_TAGS = ["c++", "cpp", "java", "python", "python3", "go", "golang",
+            "rust", "typescript", "ts", "javascript", "js", "c#", "csharp", "c",
+            "php", "swift", "kotlin", "scala", "ruby", "sql"];
 
-          Array.from(tempDiv.childNodes).forEach(child => {
-            const tag = child.tagName;
-            const text = child.textContent ? child.textContent.trim().toLowerCase() : "";
-            const isCodeOrLangHeader = tag === "PRE" || (tag === "H4" && ["c++", "cpp", "java", "python", "python3", "go", "golang", "rust", "typescript", "ts", "javascript", "js", "c#", "csharp", "c", "php", "swift", "kotlin", "scala", "ruby", "sql"].includes(text));
-            
-            if (isCodeOrLangHeader) {
-              codeContent.appendChild(child);
+          // ── Group nodes by solution heading ──────────────────────────────
+          // A solution heading is an H3 (or H2) whose text starts with
+          // "Solution" / "方法" / "Approach"
+          const isSolutionHeading = node => {
+            if (!node.tagName) return false;
+            const tag = node.tagName;
+            if (tag !== "H3" && tag !== "H2") return false;
+            const t = (node.textContent || "").trim();
+            return /^(solution\s*\d|approach\s*\d|方法[一二三四五六七八九十\d])/i.test(t);
+          };
+
+          const rawNodes = Array.from(tempDiv.childNodes);
+          const groups = [];
+          let cur = { header: null, nodes: [] };
+
+          rawNodes.forEach(n => {
+            if (isSolutionHeading(n)) {
+              if (cur.header || cur.nodes.length) groups.push(cur);
+              cur = { header: n, nodes: [] };
             } else {
-              strategyPane.appendChild(child);
+              cur.nodes.push(n);
             }
           });
+          if (cur.header || cur.nodes.length) groups.push(cur);
 
+          // ── Build panel with a global C++ toggle + per-solution blocks ───
+          panel.innerHTML = `
+            <div class="walkthrough-header-row">
+              <label class="cpp-toggle-label">
+                <input type="checkbox" class="cpp-only-toggle" checked />
+                Show C++ Only
+              </label>
+            </div>
+            <div class="solution-groups-container"></div>
+          `;
+
+          const groupsContainer = panel.querySelector(".solution-groups-container");
           const toggle = panel.querySelector(".cpp-only-toggle");
+          const allCodeContainers = [];
 
-          function applyCppFilter() {
-            const cppOnly = toggle.checked;
-            const headers = codeContent.querySelectorAll("h4");
-            
-            let hasCppHeader = false;
-            headers.forEach(h4 => {
-              const lang = h4.textContent.trim().toLowerCase();
-              if (lang === "c++" || lang === "cpp") {
-                hasCppHeader = true;
+          groups.forEach(group => {
+            const groupDiv = document.createElement("div");
+            groupDiv.className = "solution-group-block";
+
+            // Strategy pane
+            const strategyPane = document.createElement("div");
+            strategyPane.className = "solution-strategy-pane";
+            if (group.header) strategyPane.appendChild(group.header);
+
+            // Code pane
+            const codePane = document.createElement("div");
+            codePane.className = "solution-code-pane";
+            const codeContent = document.createElement("div");
+            codeContent.className = "walkthrough-code-content";
+            codePane.appendChild(codeContent);
+
+            // Distribute this group's nodes
+            group.nodes.forEach(child => {
+              const tag = child.tagName;
+              const t = child.textContent ? child.textContent.trim().toLowerCase() : "";
+              const isCode = tag === "PRE" ||
+                (tag === "H4" && LANG_TAGS.includes(t));
+              if (isCode) {
+                codeContent.appendChild(child);
+              } else {
+                strategyPane.appendChild(child);
               }
             });
 
-            let warningBox = codeContent.querySelector(".cpp-unavailable-warning");
-            if (cppOnly && !hasCppHeader && headers.length > 0) {
-              if (!warningBox) {
-                warningBox = document.createElement("div");
-                warningBox.className = "cpp-unavailable-warning";
-                warningBox.style.cssText = "padding: 10px 14px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; color: #fbbf24; font-size: 0.85rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-weight: 500;";
-                warningBox.innerHTML = `<span>⚠️ C++ solution is not available for this problem. Showing other languages instead.</span>`;
-                codeContent.insertBefore(warningBox, codeContent.firstChild);
-              }
-              headers.forEach(h4 => {
-                h4.style.display = "";
-                const nextPre = h4.nextElementSibling;
-                if (nextPre && nextPre.tagName === "PRE") nextPre.style.display = "";
-              });
-              return;
-            } else {
-              if (warningBox) {
-                warningBox.remove();
-              }
-            }
+            allCodeContainers.push(codeContent);
 
-            headers.forEach(h4 => {
-              const lang = h4.textContent.trim().toLowerCase();
-              if (["c++", "cpp", "java", "python", "python3", "go", "golang", "rust", "typescript", "ts", "javascript", "js", "c#", "csharp", "c", "php", "swift", "kotlin", "scala", "ruby", "sql"].includes(lang)) {
-                if (lang === "c++" || lang === "cpp") {
-                  h4.style.display = "";
-                  const nextPre = h4.nextElementSibling;
-                  if (nextPre && nextPre.tagName === "PRE") nextPre.style.display = "";
-                } else {
-                  h4.style.display = cppOnly ? "none" : "";
-                  const nextPre = h4.nextElementSibling;
-                  if (nextPre && nextPre.tagName === "PRE") nextPre.style.display = cppOnly ? "none" : "";
+            const splitPane = document.createElement("div");
+            splitPane.className = "split-pane-layout";
+            splitPane.appendChild(strategyPane);
+            splitPane.appendChild(codePane);
+            groupDiv.appendChild(splitPane);
+            groupsContainer.appendChild(groupDiv);
+          });
+
+          // ── C++ filter applied to every group's code pane ───────────────
+          function applyCppFilter() {
+            const cppOnly = toggle.checked;
+
+            allCodeContainers.forEach(codeContent => {
+              const headers = codeContent.querySelectorAll("h4");
+
+              let hasCpp = false;
+              headers.forEach(h4 => {
+                const lang = h4.textContent.trim().toLowerCase();
+                if (lang === "c++" || lang === "cpp") hasCpp = true;
+              });
+
+              let warningBox = codeContent.querySelector(".cpp-unavailable-warning");
+              if (cppOnly && !hasCpp && headers.length > 0) {
+                if (!warningBox) {
+                  warningBox = document.createElement("div");
+                  warningBox.className = "cpp-unavailable-warning";
+                  warningBox.style.cssText = "padding: 10px 14px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; color: #fbbf24; font-size: 0.85rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-weight: 500;";
+                  warningBox.innerHTML = `<span>⚠️ C++ solution is not available for this problem. Showing other languages instead.</span>`;
+                  codeContent.insertBefore(warningBox, codeContent.firstChild);
                 }
+                headers.forEach(h4 => {
+                  h4.style.display = "";
+                  const pre = h4.nextElementSibling;
+                  if (pre && pre.tagName === "PRE") pre.style.display = "";
+                });
+                return;
+              } else {
+                if (warningBox) warningBox.remove();
               }
+
+              headers.forEach(h4 => {
+                const lang = h4.textContent.trim().toLowerCase();
+                if (LANG_TAGS.includes(lang)) {
+                  const show = !cppOnly || lang === "c++" || lang === "cpp";
+                  h4.style.display = show ? "" : "none";
+                  const pre = h4.nextElementSibling;
+                  if (pre && pre.tagName === "PRE") pre.style.display = show ? "" : "none";
+                }
+              });
             });
           }
 
           toggle.addEventListener("change", applyCppFilter);
           applyCppFilter();
           addCopyButtons(panel);
+          applySyntaxHighlighting(panel);
           renderMath(panel);
           panel.classList.add("math-rendered");
         })
@@ -538,6 +605,7 @@ function renderQuestion(question) {
         </div>
       `;
       addCopyButtons(panel);
+      applySyntaxHighlighting(panel);
       if (node.classList.contains("expanded")) {
         renderMath(panel);
         panel.classList.add("math-rendered");
@@ -782,16 +850,15 @@ function renderCompanies() {
   const filtered = state.companies.filter(c => c.name.toLowerCase().includes(term));
   
   const companyList = document.querySelector("#companyList");
+  if (!companyList) return;
+
   if (!filtered.length) {
-    companyList.innerHTML = `<p class="muted-text" style="font-size:0.85rem; padding:8px 12px;">No companies found</p>`;
+    companyList.innerHTML = `<p class="muted-text" style="font-size:0.85rem; padding:8px 4px;">No companies found</p>`;
     return;
   }
   
-  const limit = 50;
-  const itemsToShow = filtered.slice(0, limit);
-  
   companyList.replaceChildren(
-    ...itemsToShow.map(c => {
+    ...filtered.map(c => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = `company-button${c.id === state.selectedCompanyId ? " active" : ""}`;
@@ -800,32 +867,17 @@ function renderCompanies() {
       return button;
     })
   );
-  
-  if (filtered.length > limit) {
-    const moreIndicator = document.createElement("p");
-    moreIndicator.className = "muted-text";
-    moreIndicator.style.cssText = "font-size:0.75rem; text-align:center; padding:6px; margin:4px 0 0 0; border-top:1px solid var(--panel-border); background:rgba(0,0,0,0.1);";
-    moreIndicator.textContent = `+ ${filtered.length - limit} more (refine search)`;
-    companyList.appendChild(moreIndicator);
-  }
 }
 
 function selectCompany(companyId) {
   state.selectedCompanyId = companyId;
   state.renderLimit = ITEMS_PER_PAGE;
   
-  if (companyList) {
-    companyList.classList.remove("active");
-  }
-  
-  const company = state.companies.find(c => c.id === companyId);
-  if (company && companySearchInput) {
-    companySearchInput.value = company.name;
-    state.companySearch = company.name;
-  }
-  
   const grid = document.querySelector("#questionGrid");
   grid.innerHTML = `<div class="empty-state"><p class="muted-text">Loading company questions... ⏳</p></div>`;
+  
+  // Re-render list to update the active highlight
+  renderCompanies();
   
   fetch(`/api/company?name=${companyId}`)
     .then(res => {
@@ -861,6 +913,7 @@ function openQuestionInDrawer(q) {
   
   // Compile math and show copy buttons
   addCopyButtons(card);
+  applySyntaxHighlighting(card);
   const contentHtml = card.querySelector(".problem-content-html");
   if (contentHtml && !contentHtml.classList.contains("math-rendered")) {
     renderMath(contentHtml);
@@ -868,6 +921,7 @@ function openQuestionInDrawer(q) {
   }
   const panel = card.querySelector(".solution-panel");
   if (panel && !panel.classList.contains("math-rendered") && !panel.querySelector(".walkthrough-loader")) {
+    applySyntaxHighlighting(panel);
     renderMath(panel);
     panel.classList.add("math-rendered");
   }
@@ -934,6 +988,7 @@ function initCompanies() {
         state.selectedCompanyId = data[0].id;
       }
       populateTestSourceDropdown();
+      renderCompanies(); // populate the full list immediately
     })
     .catch(err => console.error("Failed to load companies list:", err));
 }
@@ -1026,6 +1081,15 @@ testMixSelect.addEventListener("change", (e) => {
 startTestBtn.addEventListener("click", startMockTest);
 submitTestBtn.addEventListener("click", () => submitMockTest(false));
 exitTestBtn.addEventListener("click", exitMockTest);
+
+const exitTestMidBtn = document.querySelector("#exitTestMidBtn");
+if (exitTestMidBtn) {
+  exitTestMidBtn.addEventListener("click", () => {
+    if (confirm("Exit the test? Your answers will not be saved.")) {
+      exitMockTest();
+    }
+  });
+}
 
 // Mock Test Features & Core Functions
 function populateTestSourceDropdown() {
@@ -1364,7 +1428,19 @@ function renderTestQuestions() {
     });
     
     const detailsDiv = card.querySelector(".details-collapsible");
-    detailsDiv.appendChild(editorPanel);
+    
+    // Wrap all existing content into left column
+    const leftCol = document.createElement("div");
+    leftCol.className = "test-left-col";
+    Array.from(detailsDiv.children).forEach(child => leftCol.appendChild(child));
+    
+    // Right column = code editor
+    const rightCol = document.createElement("div");
+    rightCol.className = "test-right-col";
+    rightCol.appendChild(editorPanel);
+    
+    detailsDiv.appendChild(leftCol);
+    detailsDiv.appendChild(rightCol);
     
     grid.appendChild(card);
     renderMath(card);
@@ -1586,14 +1662,6 @@ showOptimalFirstInput.addEventListener("change", (event) => {
   render();
 });
 
-// Autocomplete Event Listeners for Company Search
-if (companySearchInput && companyList) {
-  companySearchInput.addEventListener("focus", () => {
-    companyList.classList.add("active");
-    renderCompanies();
-  });
-}
-
 // Close drawer button click listener
 if (closeDrawerBtn) {
   closeDrawerBtn.addEventListener("click", () => {
@@ -1601,14 +1669,8 @@ if (closeDrawerBtn) {
   });
 }
 
-// Global click listener to handle click-outside for drawer and company list dropdown
+// Global click listener to handle click-outside for drawer
 document.addEventListener("click", (e) => {
-  if (companySearchInput && companyList) {
-    if (!companySearchInput.contains(e.target) && !companyList.contains(e.target)) {
-      companyList.classList.remove("active");
-    }
-  }
-  
   if (rightDrawer && rightDrawer.classList.contains("open")) {
     if (!rightDrawer.contains(e.target) && !e.target.closest(".company-row-item")) {
       rightDrawer.classList.remove("open");
@@ -1684,10 +1746,15 @@ if (sidebarToggleBtn && appShell) {
 const drawerResizer = document.querySelector("#drawerResizer");
 let isDrawerResizing = false;
 
-// Initialize drawer width from localStorage
+// Initialize drawer width from localStorage — enforce a minimum of 780px
 const savedDrawerWidth = localStorage.getItem("drawer-width");
+const MIN_DRAWER_WIDTH = 1000;
 if (savedDrawerWidth) {
-  document.documentElement.style.setProperty("--drawer-width", savedDrawerWidth + "px");
+  const clampedWidth = Math.max(MIN_DRAWER_WIDTH, parseInt(savedDrawerWidth, 10));
+  document.documentElement.style.setProperty("--drawer-width", clampedWidth + "px");
+  localStorage.setItem("drawer-width", clampedWidth);
+} else {
+  document.documentElement.style.setProperty("--drawer-width", MIN_DRAWER_WIDTH + "px");
 }
 
 if (drawerResizer && rightDrawer) {
@@ -1702,7 +1769,7 @@ if (drawerResizer && rightDrawer) {
     if (!isDrawerResizing) return;
     
     let newWidth = window.innerWidth - e.clientX;
-    if (newWidth < 320) newWidth = 320;
+    if (newWidth < 1000) newWidth = 1000;
     if (newWidth > window.innerWidth * 0.9) newWidth = window.innerWidth * 0.9;
     
     document.documentElement.style.setProperty("--drawer-width", newWidth + "px");
