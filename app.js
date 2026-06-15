@@ -1609,6 +1609,70 @@ document.addEventListener("click", (e) => {
   }
 });
 
+// Sidebar Resizing & Collapsing Controller
+const appShell = document.querySelector(".app-shell");
+const sidebarResizer = document.querySelector("#sidebarResizer");
+const sidebarToggleBtn = document.querySelector("#sidebarToggleBtn");
+
+let isResizing = false;
+
+// 1. Initialize states from localStorage
+const savedWidth = localStorage.getItem("sidebar-width");
+const savedCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
+
+if (savedWidth) {
+  document.documentElement.style.setProperty("--sidebar-width", savedWidth + "px");
+}
+if (savedCollapsed) {
+  if (appShell) appShell.classList.add("sidebar-collapsed");
+}
+
+// 2. Resizer pointer drag events
+if (sidebarResizer && appShell) {
+  sidebarResizer.addEventListener("mousedown", (e) => {
+    if (appShell.classList.contains("sidebar-collapsed")) return;
+    if (state.testActive) return;
+
+    isResizing = true;
+    appShell.classList.add("resizing");
+    document.body.style.cursor = "col-resize";
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isResizing) return;
+    
+    let newWidth = e.clientX;
+    if (newWidth < 200) newWidth = 200;
+    if (newWidth > 450) newWidth = 450;
+    
+    document.documentElement.style.setProperty("--sidebar-width", newWidth + "px");
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!isResizing) return;
+    
+    isResizing = false;
+    appShell.classList.remove("resizing");
+    document.body.style.cursor = "";
+    
+    const currentWidth = getComputedStyle(document.documentElement).getPropertyValue("--sidebar-width").trim();
+    if (currentWidth) {
+      localStorage.setItem("sidebar-width", parseInt(currentWidth, 10));
+    }
+  });
+}
+
+// 3. Toggle button collapse events
+if (sidebarToggleBtn && appShell) {
+  sidebarToggleBtn.addEventListener("click", () => {
+    if (state.testActive) return;
+
+    const isCollapsed = appShell.classList.toggle("sidebar-collapsed");
+    localStorage.setItem("sidebar-collapsed", isCollapsed);
+  });
+}
+
 // Init
 initCompanies();
 populateTestSourceDropdown();

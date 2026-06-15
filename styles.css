@@ -68,8 +68,17 @@ input {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: var(--sidebar-width, 260px) 1fr;
   min-height: 100vh;
+  position: relative;
+}
+
+.app-shell:not(.resizing) {
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell:not(.resizing) .sidebar-toggle-btn {
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease;
 }
 
 /* Sidebar */
@@ -85,6 +94,98 @@ input {
   overflow-y: auto;
   box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
   z-index: 10;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+
+.sidebar > * {
+  transition: opacity 0.2s ease;
+}
+
+/* Collapsed state */
+.app-shell.sidebar-collapsed {
+  --sidebar-width: 0px !important;
+}
+
+.app-shell.sidebar-collapsed .sidebar {
+  padding: 24px 0;
+  width: 0;
+  opacity: 0;
+  border-right: none;
+  pointer-events: none;
+}
+
+.app-shell.sidebar-collapsed .sidebar > * {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Resize handle */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 100;
+  transition: background 0.2s;
+}
+
+.resize-handle:hover,
+.app-shell.resizing .resize-handle {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.app-shell.sidebar-collapsed .resize-handle {
+  pointer-events: none;
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle-btn {
+  position: fixed;
+  top: 24px;
+  left: calc(var(--sidebar-width, 260px) - 14px);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #090D10;
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 150;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.sidebar-toggle-btn .chevron-icon {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell.sidebar-collapsed .sidebar-toggle-btn {
+  left: 14px;
+}
+
+.app-shell.sidebar-collapsed .sidebar-toggle-btn .chevron-icon {
+  transform: rotate(180deg);
+}
+
+/* Locked state during test */
+.sidebar.test-locked .resize-handle,
+.sidebar.test-locked + .sidebar-toggle-btn {
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transition: opacity 0.2s ease;
 }
 
 .brand {
