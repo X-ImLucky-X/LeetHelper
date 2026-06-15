@@ -60,16 +60,14 @@ Since LeetHelper has no build step and zero external npm dependencies, running i
 
 Since LeetHelper is a self-contained Node.js web app, you can easily host it for free so anyone can use it.
 
-### Option 1: Render (Recommended - Free)
+### Option 1: Render (Recommended - Free & Online Compiler Support)
 1. Push this repository to your GitHub account (see instructions below).
 2. Go to [Render](https://render.com/) and log in with GitHub.
 3. Click **New** -> **Web Service**.
 4. Connect this repository.
-5. Set the settings:
-   - **Environment**: `Node`
-   - **Build Command**: (leave blank or `npm install` though there are no dependencies)
-   - **Start Command**: `node server.js`
-6. Render will assign a free `onrender.com` URL (e.g., `https://leethelper.onrender.com`) that anyone can open in their browser!
+5. Render will automatically detect the `Dockerfile` in the repository root and set the **Runtime/Environment** to **Docker** (fully compatible with Render's free tier).
+6. Click **Deploy Web Service**. Render will automatically compile and build the container, setting up C++, Java, Python, and Node compiler runtimes in the cloud.
+7. Render will assign a free `onrender.com` URL (e.g., `https://leethelper.onrender.com`) that anyone can use to browse questions and run code online!
 
 ### Option 2: Heroku
 1. Create a Heroku account and click **Create New App**.

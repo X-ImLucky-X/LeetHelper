@@ -101,7 +101,13 @@ async function executeCode(code, lang, input) {
   if (lang === "python" || lang === "py") {
     const filePath = path.join(tempDir, "Main.py");
     fs.writeFileSync(filePath, code, "utf-8");
-    const res = await runProcess("python", [filePath], input);
+    
+    // Try running 'python' first (common on Windows developer environments)
+    let res = await runProcess("python", [filePath], input);
+    // If command not found, fall back to 'python3' (common on Linux/Render)
+    if (res.code === -1 && res.stderr.includes("ENOENT")) {
+      res = await runProcess("python3", [filePath], input);
+    }
     return res;
   }
   
