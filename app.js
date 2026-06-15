@@ -30,7 +30,7 @@ if (typeof REVISION_SHEETS === "undefined" || !REVISION_SHEETS || REVISION_SHEET
 }
 
 const state = {
-  mode: "sheets", // "sheets" or "companies"
+  mode: "sheets", // "sheets", "companies", or "test"
   sheetId: REVISION_SHEETS[0].id,
   topics: new Set(),
   search: "",
@@ -41,7 +41,16 @@ const state = {
   companySearch: "",
   selectedCompanyId: null,
   companyQuestions: [],
-  timeFilters: new Set()
+  timeFilters: new Set(),
+
+  // Mock Test state
+  testActive: false,
+  testTimerInterval: null,
+  testRemainingSeconds: 0,
+  testQuestions: [],
+  testAnswers: {},
+  testSelectedLangs: {},
+  testGrades: {}
 };
 
 const sheetList = document.querySelector("#sheetList");
@@ -616,13 +625,15 @@ function render() {
     renderHeader();
     renderStats(questions);
     renderQuestions(questions);
-  } else {
+  } else if (state.mode === "companies") {
     const questions = filteredCompanyQuestions();
     renderCompanies();
     renderTimeFilters();
     renderCompanyHeader();
     renderStats(questions);
     renderQuestions(questions);
+  } else if (state.mode === "test") {
+    renderTestOnboarding();
   }
 }
 
@@ -752,6 +763,7 @@ function initCompanies() {
       if (data.length > 0 && !state.selectedCompanyId) {
         state.selectedCompanyId = data[0].id;
       }
+      populateTestSourceDropdown();
     })
     .catch(err => console.error("Failed to load companies list:", err));
 }
@@ -759,15 +771,20 @@ function initCompanies() {
 // Sidebar Tab Selectors
 const tabSheets = document.querySelector("#tabSheets");
 const tabCompanies = document.querySelector("#tabCompanies");
+const tabTest = document.querySelector("#tabTest");
 const sheetsSection = document.querySelector("#sheetsSection");
 const companiesSection = document.querySelector("#companiesSection");
+const testSection = document.querySelector("#testSection");
 const companySearchInput = document.querySelector("#companySearchInput");
 
 tabSheets.addEventListener("click", () => {
+  if (state.testActive) return;
   tabSheets.classList.add("active");
   tabCompanies.classList.remove("active");
+  tabTest.classList.remove("active");
   sheetsSection.classList.remove("hidden");
   companiesSection.classList.add("hidden");
+  testSection.classList.add("hidden");
   
   state.mode = "sheets";
   state.search = "";
@@ -776,10 +793,13 @@ tabSheets.addEventListener("click", () => {
 });
 
 tabCompanies.addEventListener("click", () => {
+  if (state.testActive) return;
   tabCompanies.classList.add("active");
   tabSheets.classList.remove("active");
+  tabTest.classList.remove("active");
   companiesSection.classList.remove("hidden");
   sheetsSection.classList.add("hidden");
+  testSection.classList.add("hidden");
   
   state.mode = "companies";
   state.search = "";
@@ -791,6 +811,485 @@ tabCompanies.addEventListener("click", () => {
     render();
   }
 });
+
+tabTest.addEventListener("click", () => {
+  if (state.testActive) return;
+  tabTest.classList.add("active");
+  tabSheets.classList.remove("active");
+  tabCompanies.classList.remove("active");
+  testSection.classList.remove("hidden");
+  sheetsSection.classList.add("hidden");
+  companiesSection.classList.add("hidden");
+  
+  state.mode = "test";
+  state.search = "";
+  searchInput.value = "";
+  render();
+});
+
+// Mock Test Settings Observers
+const testMixSelect = document.querySelector("#testMixSelect");
+const customMixGroup = document.querySelector("#customMixGroup");
+const startTestBtn = document.querySelector("#startTestBtn");
+const submitTestBtn = document.querySelector("#submitTestBtn");
+const exitTestBtn = document.querySelector("#exitTestBtn");
+
+testMixSelect.addEventListener("change", (e) => {
+  if (e.target.value === "custom") {
+    customMixGroup.classList.remove("hidden");
+  } else {
+    customMixGroup.classList.add("hidden");
+  }
+});
+
+startTestBtn.addEventListener("click", startMockTest);
+submitTestBtn.addEventListener("click", () => submitMockTest(false));
+exitTestBtn.addEventListener("click", exitMockTest);
+
+// Mock Test Features & Core Functions
+function populateTestSourceDropdown() {
+  const select = document.querySelector("#testSourceSelect");
+  if (!select) return;
+  
+  const options = [];
+  
+  // Add sheets
+  REVISION_SHEETS.forEach(sheet => {
+    const opt = document.createElement("option");
+    opt.value = `sheet-${sheet.id}`;
+    opt.textContent = `Sheet: ${sheet.name}`;
+    options.push(opt);
+  });
+  
+  // Add companies
+  state.companies.forEach(company => {
+    const opt = document.createElement("option");
+    opt.value = `company-${company.id}`;
+    opt.textContent = `Company: ${company.name}`;
+    options.push(opt);
+  });
+  
+  select.replaceChildren(...options);
+}
+
+function renderTestOnboarding() {
+  const activeSheetLabel = document.querySelector("#activeSheet");
+  const topicHeading = document.querySelector("#topicHeading");
+  const grid = document.querySelector("#questionGrid");
+  
+  activeSheetLabel.textContent = "Assessments & Mock Rounds";
+  topicHeading.textContent = "Prepare under real-world pressure";
+  
+  document.querySelector("#totalCount").textContent = "0";
+  document.querySelector("#easyCount").textContent = "0";
+  document.querySelector("#mediumCount").textContent = "0";
+  document.querySelector("#hardCount").textContent = "0";
+  
+  grid.innerHTML = `
+    <div class="empty-state" style="text-align: left; padding: 40px; max-width: 650px; margin: 0 auto; line-height: 1.6;">
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--text-primary); margin-top: 0; margin-bottom: 12px; font-weight: 800;">
+        Mock Assessment Mode
+      </h3>
+      <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">
+        Simulate an actual technical phone screen or onsite coding round. Choose a question source and difficulty preset in the sidebar, set your target timer, and start.
+      </p>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
+          <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">⏱️ Timed Pressure</h4>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Timer counts down automatically. The assessment auto-submits once the time expires.</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
+          <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">🚫 No Solution Peeking</h4>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Official solutions and hints are locked during the test so you can focus on writing your code.</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
+          <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">📝 Code Sketching</h4>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Use the integrated scratchpad editor for each problem to type out your solutions.</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 16px; border-radius: 8px;">
+          <h4 style="color: var(--accent); margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">✅ Self-Grading</h4>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0;">Review your sketch code side-by-side with the official optimal walkthroughs to grade yourself.</p>
+        </div>
+      </div>
+      
+      <p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic; margin: 0; text-align: center;">
+        Select your config in the sidebar and click <strong>Start Mock Round</strong> to begin.
+      </p>
+    </div>
+  `;
+}
+
+function getRandomSample(arr, size) {
+  const shuffled = [...arr].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, size);
+}
+
+function startMockTest() {
+  const sourceVal = document.querySelector("#testSourceSelect").value;
+  const mixVal = document.querySelector("#testMixSelect").value;
+  const durationMinutes = parseInt(document.querySelector("#testTimeInput").value, 10) || 45;
+  
+  if (!sourceVal) return;
+  
+  let questionsPromise;
+  let sourceName = "";
+  
+  if (sourceVal.startsWith("sheet-")) {
+    const sheetId = sourceVal.replace("sheet-", "");
+    const sheet = REVISION_SHEETS.find(s => s.id === sheetId);
+    sourceName = sheet ? sheet.name : "Revision Sheet";
+    questionsPromise = Promise.resolve(sheet ? sheet.questions : []);
+  } else if (sourceVal.startsWith("company-")) {
+    const companyId = sourceVal.replace("company-", "");
+    const company = state.companies.find(c => c.id === companyId);
+    sourceName = company ? company.name : "Company";
+    questionsPromise = fetch(`/api/company?name=${companyId}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Status " + res.status);
+        return res.json();
+      });
+  }
+  
+  const standardView = document.querySelector("#standardView");
+  const testView = document.querySelector("#testView");
+  standardView.classList.add("hidden");
+  testView.classList.remove("hidden");
+  
+  const testQuestionGrid = document.querySelector("#testQuestionGrid");
+  testQuestionGrid.innerHTML = `<div class="empty-state"><p class="muted-text">Preparing assessment questions... ⏳</p></div>`;
+  
+  questionsPromise
+    .then(questions => {
+      if (!questions || questions.length === 0) {
+        throw new Error("No questions available in the selected source.");
+      }
+      
+      let easyCount = 0;
+      let mediumCount = 0;
+      let hardCount = 0;
+      
+      if (mixVal === "easy-medium") {
+        easyCount = 1;
+        mediumCount = 1;
+      } else if (mixVal === "medium-hard") {
+        mediumCount = 1;
+        hardCount = 1;
+      } else if (mixVal === "full") {
+        easyCount = 1;
+        mediumCount = 2;
+        hardCount = 1;
+      } else if (mixVal === "custom") {
+        easyCount = parseInt(document.querySelector("#easyCountInput").value, 10) || 0;
+        mediumCount = parseInt(document.querySelector("#mediumCountInput").value, 10) || 0;
+        hardCount = parseInt(document.querySelector("#hardCountInput").value, 10) || 0;
+      }
+      
+      const easyQs = questions.filter(q => q.difficulty.toLowerCase() === "easy");
+      const mediumQs = questions.filter(q => q.difficulty.toLowerCase() === "medium");
+      const hardQs = questions.filter(q => q.difficulty.toLowerCase() === "hard");
+      
+      const selected = [];
+      selected.push(...getRandomSample(easyQs, easyCount));
+      selected.push(...getRandomSample(mediumQs, mediumCount));
+      selected.push(...getRandomSample(hardQs, hardCount));
+      
+      const totalWanted = easyCount + mediumCount + hardCount;
+      if (selected.length < totalWanted && questions.length > selected.length) {
+        const remaining = questions.filter(q => !selected.includes(q));
+        selected.push(...getRandomSample(remaining, totalWanted - selected.length));
+      }
+      
+      if (selected.length === 0) {
+        throw new Error("Could not select any questions. Try a different source or mix.");
+      }
+      
+      state.testActive = true;
+      state.testQuestions = selected;
+      state.testAnswers = {};
+      state.testSelectedLangs = {};
+      state.testGrades = {};
+      state.testRemainingSeconds = durationMinutes * 60;
+      
+      document.querySelector(".sidebar-tabs").style.pointerEvents = "none";
+      document.querySelector(".sidebar-tabs").style.opacity = "0.5";
+      document.querySelectorAll(".sheet-button, .topic-button, .company-button, .compact").forEach(el => {
+        el.style.pointerEvents = "none";
+        el.style.opacity = "0.5";
+      });
+      document.querySelector("#startTestBtn").disabled = true;
+      
+      document.querySelector("#testNameLabel").textContent = `${sourceName} Mock Test`;
+      
+      renderTestQuestions();
+      
+      updateTimerDisplay();
+      if (state.testTimerInterval) clearInterval(state.testTimerInterval);
+      state.testTimerInterval = setInterval(tickTimer, 1000);
+      
+      document.querySelector("#testScorecard").classList.add("hidden");
+    })
+    .catch(err => {
+      console.error(err);
+      testQuestionGrid.innerHTML = `
+        <div class="empty-state">
+          <p class="muted-text" style="color:var(--danger)">Failed to start test: ${err.message}</p>
+          <button onclick="exitMockTest()" class="test-exit-btn" style="margin-top:12px; width:auto;">Go Back</button>
+        </div>
+      `;
+    });
+}
+
+function renderTestQuestions() {
+  const grid = document.querySelector("#testQuestionGrid");
+  grid.replaceChildren();
+  
+  state.testQuestions.forEach((q, idx) => {
+    const card = renderQuestion(q);
+    
+    card.classList.add("in-test");
+    
+    const titleText = card.querySelector(".question-title-text");
+    titleText.textContent = `Problem ${idx + 1}: ${q.title}`;
+    
+    card.classList.remove("collapsed");
+    card.classList.add("expanded");
+    
+    const editorPanel = document.createElement("div");
+    editorPanel.className = "test-code-editor-panel";
+    editorPanel.innerHTML = `
+      <div class="editor-header">
+        <span>Sketch your solution</span>
+        <select class="editor-lang-select" aria-label="Select Programming Language">
+          <option value="cpp">C++</option>
+          <option value="java">Java</option>
+          <option value="python">Python</option>
+          <option value="javascript">JavaScript</option>
+        </select>
+      </div>
+      <textarea class="editor-textarea" placeholder="Write your approach or code here..." aria-label="Code Editor"></textarea>
+    `;
+    
+    const textarea = editorPanel.querySelector(".editor-textarea");
+    const langSelect = editorPanel.querySelector(".editor-lang-select");
+    
+    const qId = q.id || q.title;
+    if (state.testAnswers[qId]) {
+      textarea.value = state.testAnswers[qId];
+    }
+    if (state.testSelectedLangs[qId]) {
+      langSelect.value = state.testSelectedLangs[qId];
+    } else {
+      state.testSelectedLangs[qId] = langSelect.value;
+    }
+    
+    textarea.addEventListener("input", (e) => {
+      state.testAnswers[qId] = e.target.value;
+    });
+    
+    langSelect.addEventListener("change", (e) => {
+      state.testSelectedLangs[qId] = e.target.value;
+    });
+    
+    const detailsDiv = card.querySelector(".details-collapsible");
+    detailsDiv.appendChild(editorPanel);
+    
+    grid.appendChild(card);
+    renderMath(card);
+  });
+}
+
+function tickTimer() {
+  if (!state.testActive) return;
+  
+  state.testRemainingSeconds--;
+  updateTimerDisplay();
+  
+  if (state.testRemainingSeconds <= 0) {
+    clearInterval(state.testTimerInterval);
+    submitMockTest(true);
+  }
+}
+
+function updateTimerDisplay() {
+  const timerCard = document.querySelector(".test-timer-card");
+  const timerLabel = document.querySelector("#testTimerLabel");
+  if (!timerLabel) return;
+  
+  const minutes = Math.floor(state.testRemainingSeconds / 60);
+  const seconds = state.testRemainingSeconds % 60;
+  
+  timerLabel.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  
+  if (state.testRemainingSeconds < 300) {
+    timerCard.classList.add("time-low");
+  } else {
+    timerCard.classList.remove("time-low");
+  }
+}
+
+function submitMockTest(isTimeout = false) {
+  if (!state.testActive) return;
+  
+  if (state.testTimerInterval) clearInterval(state.testTimerInterval);
+  
+  if (!isTimeout) {
+    const confirmSubmit = confirm("Are you sure you want to submit your assessment?");
+    if (!confirmSubmit) {
+      state.testTimerInterval = setInterval(tickTimer, 1000);
+      return;
+    }
+  } else {
+    alert("Time's up! Your mock test is being submitted automatically.");
+  }
+  
+  state.testActive = false;
+  
+  document.querySelectorAll(".editor-textarea").forEach(ta => ta.disabled = true);
+  document.querySelectorAll(".editor-lang-select").forEach(sel => sel.disabled = true);
+  
+  document.querySelectorAll("#testQuestionGrid .question-card").forEach(card => {
+    card.classList.remove("in-test");
+    addCopyButtons(card);
+  });
+  
+  renderScorecard();
+}
+
+function renderScorecard() {
+  const scorecard = document.querySelector("#testScorecard");
+  const details = document.querySelector("#scorecardDetails");
+  
+  scorecard.classList.remove("hidden");
+  
+  state.testQuestions.forEach(q => {
+    const qId = q.id || q.title;
+    if (!state.testGrades[qId]) {
+      state.testGrades[qId] = null;
+    }
+  });
+  
+  updateScorecardSummary();
+  
+  details.replaceChildren(
+    ...state.testQuestions.map((q, idx) => {
+      const qId = q.id || q.title;
+      const item = document.createElement("div");
+      item.className = "scorecard-item";
+      
+      const titleSpan = document.createElement("div");
+      titleSpan.className = "scorecard-item-title";
+      titleSpan.innerHTML = `
+        <span>Problem ${idx + 1}: ${q.title}</span>
+        <span class="difficulty ${q.difficulty.toLowerCase()}">${q.difficulty}</span>
+      `;
+      
+      const actions = document.createElement("div");
+      actions.className = "scorecard-item-actions";
+      
+      const correctBtn = document.createElement("button");
+      correctBtn.type = "button";
+      correctBtn.className = "self-grade-btn correct";
+      correctBtn.textContent = "Correct";
+      if (state.testGrades[qId] === "correct") correctBtn.classList.add("active");
+      
+      const incorrectBtn = document.createElement("button");
+      incorrectBtn.type = "button";
+      incorrectBtn.className = "self-grade-btn incorrect";
+      incorrectBtn.textContent = "Incorrect";
+      if (state.testGrades[qId] === "incorrect") incorrectBtn.classList.add("active");
+      
+      correctBtn.addEventListener("click", () => {
+        state.testGrades[qId] = "correct";
+        correctBtn.classList.add("active");
+        incorrectBtn.classList.remove("active");
+        updateScorecardSummary();
+      });
+      
+      incorrectBtn.addEventListener("click", () => {
+        state.testGrades[qId] = "incorrect";
+        incorrectBtn.classList.add("active");
+        correctBtn.classList.remove("active");
+        updateScorecardSummary();
+      });
+      
+      actions.appendChild(correctBtn);
+      actions.appendChild(incorrectBtn);
+      
+      item.appendChild(titleSpan);
+      item.appendChild(actions);
+      return item;
+    })
+  );
+}
+
+function updateScorecardSummary() {
+  const summaryLabel = document.querySelector("#scorecardSummaryLabel");
+  const scorecardCard = document.querySelector("#testScorecard");
+  
+  const total = state.testQuestions.length;
+  let correct = 0;
+  let incorrect = 0;
+  let ungraded = 0;
+  
+  state.testQuestions.forEach(q => {
+    const qId = q.id || q.title;
+    const grade = state.testGrades[qId];
+    if (grade === "correct") correct++;
+    else if (grade === "incorrect") incorrect++;
+    else ungraded++;
+  });
+  
+  if (ungraded > 0) {
+    summaryLabel.innerHTML = `Assessment submitted! Please compare your sketch code with the solutions shown below and self-grade your answers.<br><strong>Progress:</strong> ${correct} Correct, ${incorrect} Incorrect, ${ungraded} Ungraded`;
+    scorecardCard.classList.remove("failed-scorecard");
+  } else {
+    const scorePct = Math.round((correct / total) * 100);
+    summaryLabel.innerHTML = `<strong>Assessment Complete!</strong> Final Score: <strong>${correct}/${total} (${scorePct}%)</strong>.<br>Great work! You can exit the mock mode to resume standard browsing.`;
+    
+    if (scorePct >= 70) {
+      scorecardCard.classList.remove("failed-scorecard");
+    } else {
+      scorecardCard.classList.add("failed-scorecard");
+    }
+  }
+}
+
+function exitMockTest() {
+  if (state.testActive) {
+    const confirmExit = confirm("Are you sure you want to exit? Your active test progress will be lost.");
+    if (!confirmExit) return;
+  }
+  
+  if (state.testTimerInterval) clearInterval(state.testTimerInterval);
+  state.testActive = false;
+  state.testQuestions = [];
+  state.testAnswers = {};
+  state.testGrades = {};
+  
+  document.querySelector(".sidebar-tabs").style.pointerEvents = "";
+  document.querySelector(".sidebar-tabs").style.opacity = "";
+  document.querySelectorAll(".sheet-button, .topic-button, .company-button, .compact").forEach(el => {
+    el.style.pointerEvents = "";
+    el.style.opacity = "";
+  });
+  document.querySelector("#startTestBtn").disabled = false;
+  
+  document.querySelector("#standardView").classList.remove("hidden");
+  document.querySelector("#testView").classList.add("hidden");
+  document.querySelector("#testScorecard").classList.add("hidden");
+  
+  tabSheets.classList.add("active");
+  tabCompanies.classList.remove("active");
+  tabTest.classList.remove("active");
+  
+  sheetsSection.classList.remove("hidden");
+  companiesSection.classList.add("hidden");
+  testSection.classList.add("hidden");
+  
+  state.mode = "sheets";
+  render();
+}
 
 let companySearchTimeout;
 companySearchInput.addEventListener("input", (event) => {
@@ -813,4 +1312,5 @@ showOptimalFirstInput.addEventListener("change", (event) => {
 
 // Init
 initCompanies();
+populateTestSourceDropdown();
 selectSheet(state.sheetId);
