@@ -73,10 +73,8 @@ input {
 
 /* Sidebar */
 .sidebar {
-  background: rgba(10, 15, 30, 0.75);
+  background: #0a0f1e;
   border-right: 1px solid var(--panel-border);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -146,7 +144,7 @@ input {
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-tab-btn:hover {
@@ -203,7 +201,7 @@ input {
   font-size: 0.85rem;
   cursor: pointer;
   text-align: left;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .sheet-button:hover,
@@ -466,13 +464,11 @@ input:checked + .slider:before {
 }
 
 .stat-card {
-  background: var(--panel-bg);
+  background: rgba(13, 20, 37, 0.95);
   border: 1px solid var(--panel-border);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 14px 18px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease;
   box-shadow: var(--shadow-sm);
 }
 
@@ -540,11 +536,12 @@ input:checked + .slider:before {
 }
 
 .question-card {
-  background: var(--panel-bg);
+  background: rgba(13, 20, 37, 0.95);
   border: 1px solid var(--panel-border);
   border-radius: 12px;
   padding: 18px 20px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
   box-shadow: var(--shadow-sm);
 }
 

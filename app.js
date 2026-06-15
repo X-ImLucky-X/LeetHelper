@@ -29,13 +29,15 @@ if (typeof REVISION_SHEETS === "undefined" || !REVISION_SHEETS || REVISION_SHEET
   throw new Error("REVISION_SHEETS is not defined or is empty in data.js");
 }
 
+const ITEMS_PER_PAGE = 35;
+
 const state = {
   mode: "sheets", // "sheets", "companies", or "test"
   sheetId: REVISION_SHEETS[0].id,
   topics: new Set(),
   search: "",
   showOptimalFirst: true,
-  renderLimit: 60,
+  renderLimit: ITEMS_PER_PAGE,
   
   // Company state
   companies: [],
@@ -87,14 +89,14 @@ function selectSheet(sheetId) {
   state.sheetId = sheetId;
   state.topics = new Set();
   state.search = "";
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   searchInput.value = "";
   render();
 }
 
 function showAllTopics() {
   state.topics = new Set();
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   render();
 }
 
@@ -104,7 +106,7 @@ function toggleTopic(topic) {
   } else {
     state.topics.add(topic);
   }
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   render();
 }
 
@@ -359,6 +361,11 @@ function renderQuestion(question) {
         renderMath(contentHtml);
         contentHtml.classList.add("math-rendered");
       }
+      // Compile solution panel math ONLY when expanded and not already rendered
+      if (!panel.classList.contains("math-rendered") && !panel.querySelector(".walkthrough-loader")) {
+        renderMath(panel);
+        panel.classList.add("math-rendered");
+      }
     }
   };
 
@@ -472,6 +479,7 @@ function renderQuestion(question) {
           applyCppFilter();
           addCopyButtons(panel);
           renderMath(panel);
+          panel.classList.add("math-rendered");
         })
         .catch(err => {
           console.error("Walkthrough load error:", err);
@@ -492,7 +500,12 @@ function renderQuestion(question) {
         </div>
       `;
       addCopyButtons(panel);
-      renderMath(panel);
+      if (node.classList.contains("expanded")) {
+        renderMath(panel);
+        panel.classList.add("math-rendered");
+      } else {
+        panel.classList.remove("math-rendered");
+      }
     }
   }
 
@@ -572,7 +585,7 @@ function renderQuestions(questions) {
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     `;
     btn.addEventListener("click", () => {
-      state.renderLimit += 60;
+      state.renderLimit += ITEMS_PER_PAGE;
       if (state.mode === "sheets") {
         renderQuestions(filteredQuestions());
       } else {
@@ -665,7 +678,7 @@ function renderCompanies() {
 
 function selectCompany(companyId) {
   state.selectedCompanyId = companyId;
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   
   const grid = document.querySelector("#questionGrid");
   grid.innerHTML = `<div class="empty-state"><p class="muted-text">Loading company questions... ⏳</p></div>`;
@@ -696,7 +709,7 @@ function renderTimeFilters() {
   allBtn.innerHTML = `<span>All time</span><span>${state.companyQuestions.length}</span>`;
   allBtn.addEventListener("click", () => {
     state.timeFilters = new Set();
-    state.renderLimit = 60;
+    state.renderLimit = ITEMS_PER_PAGE;
     render();
   });
   
@@ -720,7 +733,7 @@ function toggleTimeFilter(tf) {
   } else {
     state.timeFilters.add(tf);
   }
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   render();
 }
 
@@ -769,7 +782,7 @@ tabSheets.addEventListener("click", () => {
   
   state.mode = "sheets";
   state.search = "";
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   searchInput.value = "";
   render();
 });
@@ -785,7 +798,7 @@ tabCompanies.addEventListener("click", () => {
   
   state.mode = "companies";
   state.search = "";
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   searchInput.value = "";
   
   if (state.companyQuestions.length === 0 && state.selectedCompanyId) {
@@ -806,7 +819,7 @@ tabTest.addEventListener("click", () => {
   
   state.mode = "test";
   state.search = "";
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   searchInput.value = "";
   render();
 });
@@ -1363,7 +1376,7 @@ function exitMockTest() {
   testSection.classList.add("hidden");
   
   state.mode = "sheets";
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   render();
 }
 
@@ -1378,7 +1391,7 @@ companySearchInput.addEventListener("input", (event) => {
 
 searchInput.addEventListener("input", (event) => {
   state.search = event.target.value;
-  state.renderLimit = 60;
+  state.renderLimit = ITEMS_PER_PAGE;
   render();
 });
 
