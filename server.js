@@ -31,7 +31,13 @@ function runProcess(command, args, stdinInput, timeoutMs = 5000) {
     try {
       child = spawn(command, args);
     } catch (err) {
-      resolve({ stdout: "", stderr: `System Error: Failed to start process '${command}'. Make sure it is installed and in your PATH.\nError: ${err.message}`, code: -1 });
+      let guide = "";
+      if (command === "g++") {
+        guide = "\n\nTip: To run C++ code, you must install a C++ compiler (e.g. MinGW-w64 via MSYS2) and add 'g++' to your system's PATH.";
+      } else if (command === "javac" || command === "java") {
+        guide = "\n\nTip: To run Java code, you must install the Java Development Kit (JDK) and add 'java'/'javac' to your system's PATH.";
+      }
+      resolve({ stdout: "", stderr: `System Error: Failed to start process '${command}'. Make sure it is installed and in your PATH.${guide}\nError: ${err.message}`, code: -1 });
       return;
     }
     
@@ -60,7 +66,15 @@ function runProcess(command, args, stdinInput, timeoutMs = 5000) {
     
     child.on("error", (err) => {
       clearTimeout(timer);
-      resolve({ stdout, stderr: stderr + `\nExecution Error: ${err.message}\nMake sure '${command}' is installed and in your PATH.`, code: -1 });
+      let guide = "";
+      if (err.code === "ENOENT") {
+        if (command === "g++") {
+          guide = "\n\nTip: To run C++ code, you must install a C++ compiler (e.g. MinGW-w64 via MSYS2) and add 'g++' to your system's PATH.";
+        } else if (command === "javac" || command === "java") {
+          guide = "\n\nTip: To run Java code, you must install the Java Development Kit (JDK) and add 'java'/'javac' to your system's PATH.";
+        }
+      }
+      resolve({ stdout, stderr: stderr + `\nExecution Error: ${err.message}\nMake sure '${command}' is installed and in your PATH.${guide}`, code: -1 });
     });
     
     if (stdinInput) {
