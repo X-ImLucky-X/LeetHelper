@@ -2524,7 +2524,12 @@ samp,
   
   /* Stack drawer content vertically */
   .right-drawer .split-pane-layout {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .right-drawer .solution-strategy-pane {
+    position: static;
   }
   
   .right-drawer .solution-code-pane {
