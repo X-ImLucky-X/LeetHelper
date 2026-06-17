@@ -1245,39 +1245,7 @@ pre .copy-code-btn.copied {
   color: var(--text-muted);
 }
 
-/* Responsive Rules */
-@media (max-width: 900px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-  .sidebar {
-    height: auto;
-    position: static;
-    border-right: none;
-    border-bottom: 1px solid var(--panel-border);
-  }
-  .main {
-    padding: 24px;
-    height: auto;
-  }
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  .toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .search-box {
-    width: 100%;
-  }
-}
-
+/* Responsive rules moved to the bottom of the file */
 /* Mock Test Section & Configuration */
 .test-config-form {
   display: flex;
@@ -2474,3 +2442,142 @@ samp,
 }
 
 
+/* ==============================================================
+   Mobile Responsiveness & Overlay Sidebar
+   ============================================================== */
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Sidebar as mobile overlay */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    z-index: 200;
+    transform: translateX(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    background: rgba(9, 13, 16, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  
+  .app-shell.sidebar-collapsed .sidebar {
+    width: 280px; /* retain width so it slides properly */
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  /* Prevent interaction with elements inside collapsed sidebar */
+  .app-shell.sidebar-collapsed .sidebar * {
+    pointer-events: none;
+  }
+  
+  /* The toggle button stays visible and fixed to open sidebar */
+  .sidebar-toggle-btn {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 210; /* Above sidebar */
+  }
+  
+  /* Adjust main content padding to avoid overlap with toggle button */
+  .main {
+    padding: 60px 16px 24px 16px;
+  }
+  
+  /* Main stats and toolbars */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .filter-dashboard-zone {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  
+  .difficulty-dashboard {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  
+  .difficulty-dashboard .stat-card {
+    flex: 1;
+    min-width: 80px;
+  }
+  
+  /* Right Drawer full width */
+  .right-drawer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    right: -100vw !important; /* adjust closed position */
+  }
+  .right-drawer.open {
+    transform: translateX(-100vw) !important;
+  }
+  
+  /* Stack drawer content vertically */
+  .right-drawer .split-pane-layout {
+    flex-direction: column;
+  }
+  
+  .right-drawer .solution-code-pane {
+    border-left: none;
+    border-top: 1px solid var(--panel-border);
+    padding-left: 0;
+    padding-top: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  
+  .search-box {
+    width: 100%;
+  }
+  
+  /* Test view responsive adjustments */
+  .test-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .test-timer-wrapper {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  /* Test View Grid Stack */
+  .question-card.in-test .details-collapsible {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+  
+  .test-right-col {
+    position: static; /* Remove sticky on mobile so it can scroll naturally */
+    margin-top: 16px;
+    border-top: 1px solid var(--panel-border);
+    padding-top: 16px;
+  }
+  
+  /* Disable resize handles on mobile */
+  .resize-handle,
+  .drawer-resize-handle {
+    display: none !important;
+  }
+}

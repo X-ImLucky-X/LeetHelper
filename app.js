@@ -873,6 +873,8 @@ function selectCompany(companyId) {
   state.selectedCompanyId = companyId;
   state.renderLimit = ITEMS_PER_PAGE;
   
+  closeSidebarOnMobile();
+  
   const grid = document.querySelector("#questionGrid");
   grid.innerHTML = `<div class="empty-state"><p class="muted-text">Loading company questions... ⏳</p></div>`;
   
@@ -1021,6 +1023,7 @@ tabSheets.addEventListener("click", () => {
   state.search = "";
   state.renderLimit = ITEMS_PER_PAGE;
   searchInput.value = "";
+  closeSidebarOnMobile();
   render();
 });
 
@@ -1038,6 +1041,7 @@ tabCompanies.addEventListener("click", () => {
   state.search = "";
   state.renderLimit = ITEMS_PER_PAGE;
   searchInput.value = "";
+  closeSidebarOnMobile();
   
   if (state.companyQuestions.length === 0 && state.selectedCompanyId) {
     selectCompany(state.selectedCompanyId);
@@ -1060,6 +1064,7 @@ tabTest.addEventListener("click", () => {
   state.search = "";
   state.renderLimit = ITEMS_PER_PAGE;
   searchInput.value = "";
+  closeSidebarOnMobile();
   render();
 });
 
@@ -1730,6 +1735,14 @@ if (sidebarResizer && appShell) {
       localStorage.setItem("sidebar-width", parseInt(currentWidth, 10));
     }
   });
+}
+
+// Mobile Helper: Auto-close sidebar on small screens after a selection
+function closeSidebarOnMobile() {
+  if (window.innerWidth <= 900 && appShell) {
+    appShell.classList.add("sidebar-collapsed");
+    localStorage.setItem("sidebar-collapsed", "true");
+  }
 }
 
 // 3. Toggle button collapse events
