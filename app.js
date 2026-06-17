@@ -271,7 +271,9 @@ function renderQuestion(question) {
   const meta = node.querySelector(".question-meta");
   const tabs = node.querySelector(".solution-tabs");
   const panel = node.querySelector(".solution-panel");
-  const solutions = [...orderedSolutions(question)];
+  let solutions = [...orderedSolutions(question)].filter(s => {
+    return !(s.idea && s.idea.includes("Utilize optimal data structures"));
+  });
   if (question.frontendId) {
     solutions.push({
       label: "All Approaches (Walkthrough)",
@@ -355,7 +357,8 @@ function renderQuestion(question) {
       })
     );
   } else {
-    topicsPanel.innerHTML = `<span class="muted-text">No topic tags available.</span>`;
+    topicsBtn.style.display = "none";
+    topicsPanel.style.display = "none";
   }
 
   // Toggle Panels (stopPropagation prevents the card from collapsing)
@@ -1039,9 +1042,12 @@ tabCompanies.addEventListener("click", () => {
   
   state.mode = "companies";
   state.search = "";
+  if (searchInput) searchInput.value = "";
+  state.companySearch = "";
+  if (companySearchInput) companySearchInput.value = "";
   state.renderLimit = ITEMS_PER_PAGE;
-  searchInput.value = "";
   closeSidebarOnMobile();
+  renderCompanies();
   
   if (state.companyQuestions.length === 0 && state.selectedCompanyId) {
     selectCompany(state.selectedCompanyId);

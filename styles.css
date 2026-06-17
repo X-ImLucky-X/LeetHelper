@@ -2115,7 +2115,7 @@ pre .copy-code-btn.copied {
 /* Split-Pane Solutions Viewer */
 .split-pane-layout {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   margin-top: 16px;
   align-items: start;
@@ -2124,8 +2124,8 @@ pre .copy-code-btn.copied {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  position: sticky;
-  top: 0;
+  min-width: 0;
+  word-break: break-word;
 }
 .solution-strategy-pane h2,
 .solution-strategy-pane h3 {
@@ -2170,6 +2170,7 @@ pre .copy-code-btn.copied {
   min-height: 150px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 .solution-code-pane.empty-code-pane {
   justify-content: center;
